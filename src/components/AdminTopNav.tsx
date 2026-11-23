@@ -27,11 +27,13 @@ import {
 interface AdminTopNavProps {
   soundEnabled?: boolean;
   onToggleSound?: () => void;
+  onTestSound?: () => void;
 }
 
 export function AdminTopNav({
   soundEnabled = true,
   onToggleSound,
+  onTestSound,
 }: AdminTopNavProps) {
   // Live Clock State
   const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
@@ -254,27 +256,42 @@ export function AdminTopNav({
         {/* ======================================================== */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative" ref={popoverRef}>
           
-          {/* Tombol Toggle Audio Notifikasi */}
+          {/* Tombol Toggle Audio Notifikasi & Tes Suara */}
           {onToggleSound && (
-            <button
-              type="button"
-              onClick={onToggleSound}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                soundEnabled
-                  ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100'
-                  : 'bg-stone-100 border-stone-200 text-stone-500 hover:bg-stone-200'
-              }`}
-              title={soundEnabled ? 'Suara bel aktif saat pesanan masuk' : 'Suara bel dimatikan'}
-            >
-              {soundEnabled ? (
-                <Volume2 className="w-3.5 h-3.5 text-amber-600" />
-              ) : (
-                <VolumeX className="w-3.5 h-3.5 text-stone-400" />
-              )}
-              <span className="hidden md:inline text-[11px]">
-                {soundEnabled ? 'Bel Aktif' : 'Mute'}
-              </span>
-            </button>
+            <div className="flex items-center rounded-xl border border-amber-200/90 bg-amber-50/70 p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={onToggleSound}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  soundEnabled
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-stone-200 text-stone-600 hover:bg-stone-300'
+                }`}
+                title={soundEnabled ? 'Suara bel aktif saat pesanan masuk' : 'Suara bel dimatikan'}
+              >
+                {soundEnabled ? (
+                  <Volume2 className="w-3.5 h-3.5 text-white" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5 text-stone-500" />
+                )}
+                <span className="hidden sm:inline text-[11px]">
+                  {soundEnabled ? 'Bel Aktif' : 'Mute'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTestSound) {
+                    onTestSound();
+                  }
+                }}
+                className="px-2 py-1 text-[10px] font-black uppercase text-amber-900 hover:text-amber-950 hover:bg-amber-100 rounded-md transition-colors cursor-pointer"
+                title="Klik untuk tes suara bel"
+              >
+                Tes
+              </button>
+            </div>
           )}
 
           {/* Tombol Icon Notification Bell */}

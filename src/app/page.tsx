@@ -201,7 +201,7 @@ function ArunaPochaStyleContent() {
           setCart(parsed);
         }
       }
-    } catch {}
+    } catch { }
 
     const handleStoreUpdated = () => {
       loadData();
@@ -228,7 +228,7 @@ function ArunaPochaStyleContent() {
       } else {
         localStorage.removeItem(`aruna_cart_${currentTable}`);
       }
-    } catch {}
+    } catch { }
   }, [cart, currentTable]);
 
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -563,7 +563,7 @@ function ArunaPochaStyleContent() {
       CafeStore.addCustomerOrderId(newOrder.id);
       try {
         localStorage.removeItem(`aruna_cart_${currentTable}`);
-      } catch {}
+      } catch { }
 
       setCart([]);
       setIsCartDrawerOpen(false);

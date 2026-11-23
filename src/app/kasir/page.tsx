@@ -52,14 +52,20 @@ export default function KasirDashboard() {
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [audioUnlocked, setAudioUnlocked] = useState<boolean>(false);
   const [notificationBanner, setNotificationBanner] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   const prevOrderCountRef = useRef<number>(0);
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const soundEnabledRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   const triggerNewOrderAlert = (order?: Order) => {
-    if (soundEnabled) {
+    if (soundEnabledRef.current) {
       playNotificationSound();
     }
     const label = order 
@@ -67,6 +73,23 @@ export default function KasirDashboard() {
       : '🔔 Ada pesanan baru masuk dari pelanggan!';
     setNotificationBanner(label);
     setTimeout(() => setNotificationBanner(null), 7000);
+  };
+
+  const handleToggleSound = () => {
+    const nextVal = !soundEnabled;
+    setSoundEnabled(nextVal);
+    soundEnabledRef.current = nextVal;
+    unlockAudioContext();
+    setAudioUnlocked(true);
+    if (nextVal) {
+      playNotificationSound();
+    }
+  };
+
+  const handleTestSound = () => {
+    unlockAudioContext();
+    setAudioUnlocked(true);
+    playNotificationSound();
   };
 
   const fetchOrders = async () => {
@@ -95,9 +118,11 @@ export default function KasirDashboard() {
     // Unlock Audio Context pada klik/interaksi kasir pertama kali
     const handleUserInteraction = () => {
       unlockAudioContext();
+      setAudioUnlocked(true);
     };
     window.addEventListener('click', handleUserInteraction, { once: true });
     window.addEventListener('touchstart', handleUserInteraction, { once: true });
+    window.addEventListener('pointerdown', handleUserInteraction, { once: true });
 
     fetchOrders();
 
@@ -125,8 +150,9 @@ export default function KasirDashboard() {
       window.removeEventListener('arjuna_store_updated', handleStoreUpdate);
       window.removeEventListener('click', handleUserInteraction);
       window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('pointerdown', handleUserInteraction);
     };
-  }, [soundEnabled]);
+  }, []);
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     await CafeStore.updateOrderStatus(orderId, newStatus);
@@ -208,10 +234,7 @@ export default function KasirDashboard() {
         pendingOrdersCount={pendingCount}
         pendingReservationsCount={orders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length}
         soundEnabled={soundEnabled}
-        onToggleSound={() => {
-          setSoundEnabled(!soundEnabled);
-          if (!soundEnabled) playNotificationSound();
-        }}
+        onToggleSound={handleToggleSound}
       />
 
       {/* ======================================================== */}
@@ -222,11 +245,20 @@ export default function KasirDashboard() {
         {/* TOP NAVBAR (JAM, TANGGAL & PEMBERITAHUAN PESANAN / BAHAN HABIS) */}
         <AdminTopNav
           soundEnabled={soundEnabled}
-          onToggleSound={() => {
-            setSoundEnabled(!soundEnabled);
-            if (!soundEnabled) playNotificationSound();
-          }}
+          onToggleSound={handleToggleSound}
+          onTestSound={handleTestSound}
         />
+
+        {/* Banner Aktivasi Suara Bel (Jika belum pernah diklik di browser) */}
+        {!audioUnlocked && (
+          <div 
+            onClick={handleTestSound}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm select-none"
+          >
+            <Bell className="w-3.5 h-3.5 animate-bounce" />
+            <span>Klik di sini sekali untuk mengaktifkan notifikasi suara bel pesanan otomatis (Browser Audio Permission)</span>
+          </div>
+        )}
 
         {/* Banner Alert Notifikasi Baru */}
         {notificationBanner && (
