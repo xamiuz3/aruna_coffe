@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aruna Cafee - Self-Order, Reservasi & Pemotongan Stok Bahan Baku
 
-## Getting Started
+Sistem aplikasi web restoran/kafe modern mobile-first berbasis **Next.js (App Router)** dan **Supabase (PostgreSQL + Storage + Realtime)**, dirancang khusus sesuai alur operasional kafe:
 
-First, run the development server:
+## Fitur Utama
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. **Guest Self-Order Ala Gacoan (`/order`)**:
+   - Deteksi nomor meja otomatis via parameter QR code (`/order?table=Meja%2001`).
+   - Pilihan varian menu (Level pedas 0–4, topping, dan catatan khusus).
+   - Keranjang belanja melayang (floating cart) responsif.
+   - Mode **Reservasi Meja** (pemilihan tanggal, jam kedatangan, dan jumlah tamu).
+   - Checkout dengan 2 opsi pembayaran:
+     - **Bayar di Kasir** (Tunai / EDC).
+     - **QRIS BRI Merchant** (Menampilkan QR statis kafe + nominal total + formulir upload bukti transfer).
+   - Pelacakan status pesanan live (`/order/status/[id]`).
+
+2. **Dashboard Kasir & Kitchen (`/kasir`)**:
+   - Alert audio lonceng sintetis (*Web Audio API*) saat order baru masuk tanpa butuh file mp3 eksternal.
+   - Notifikasi otomatis ke grup WhatsApp staf kasir via API Gateway (`/api/notify-wa`).
+   - Modal preview dan zoom screenshot bukti transfer QRIS BRI.
+   - Alur status pesanan: *Menunggu Konfirmasi ➔ Diterima / Proses Dapur ➔ Selesai & Potong Stok*.
+   - **Tombol Print Struk Thermal iware**: Format cetak thermal ESC/POS 58mm/80mm (nama kafe, nomor meja, rincian menu, varian, grand total, metode bayar).
+   - **Checkbox Manual Majoo**: Penanda pengingat bagi kasir untuk mencatat transaksi ke POS Majoo demi pembukuan internal.
+
+3. **Resep & Pemotongan Stok Bahan Baku Otomatis (`/kasir/stok`)**:
+   - Master bahan baku dengan satuan (gram, ml, pcs, porsi) dan peringatan batas minimum stok.
+   - Master Resep (BOM - *Bill of Materials*): pemetaan pemakaian bahan baku per menu/porsi.
+   - Pemotongan otomatis: Ketika order diubah ke status **"Selesai"**, sistem secara otomatis mendebit stok bahan baku sesuai resep dan mencatatnya ke riwayat mutasi.
+   - Fitur restock bahan baku manual dengan pencatatan alasan.
+
+4. **Generator QR Code Meja (`/kasir/meja`)**:
+   - Membuat QR code untuk Meja 01 s/d Meja N secara dinamis.
+   - Tombol cetak stiker barcode meja siap tempel di setiap meja kafe.
+
+---
+
+## Konfigurasi Supabase
+
+Skema SQL lengkap, fungsi stored procedure pemotongan stok otomatis, dan data awal (*seed data*) telah tersedia di file:
+`supabase/schema.sql`
+
+Langkah menghubungkan ke Supabase:
+1. Buat project baru di [Supabase Console](https://supabase.com).
+2. Buka menu **SQL Editor**, salin dan jalankan seluruh isi file `supabase/schema.sql`.
+3. Buat Bucket Storage bernama `payment_proofs` (beri akses public read agar kasir bisa melihat bukti upload).
+4. Buat file `.env.local` dan isi kredensial berikut:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh......
+SUPABASE_SERVICE_ROLE_KEY=eyJh......
+
+# Opsional untuk WhatsApp Gateway (Fonnte / Wablas)
+WA_GATEWAY_API_URL=https://api.fonnte.com/send
+WA_GATEWAY_API_KEY=your-api-key
+WA_KASIR_GROUP_ID=120363024823948293@g.us
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Catatan**: Jika Supabase belum dikonfigurasi, sistem secara otomatis berjalan dalam mode *Smart Local Fallback* sehingga seluruh fitur (order, upload bukti, mutasi stok, cetak struk) dapat langsung diuji coba secara mulus di `npm run dev`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Menjalankan Proyek
 
-## Learn More
+```bash
+# Menjalankan server development
+npm run dev
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Membangun produksi
+npm run build
+npm run start
+```
+Buka browser di `http://localhost:3000`.
