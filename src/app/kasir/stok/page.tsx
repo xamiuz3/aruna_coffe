@@ -202,8 +202,8 @@ function SearchableMaterialSelect({
 export default function StokManagementPage() {
   const [materials, setMaterials] = useState<RawMaterial[]>([]);
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => CafeStore.getInitialMenuItems());
+  const [categories, setCategories] = useState<MenuCategory[]>(() => CafeStore.getInitialCategories());
   const [mutations, setMutations] = useState<StockMutation[]>([]);
   const [activeTab, setActiveTab] = useState<'stok' | 'resep' | 'mutasi'>('stok');
 

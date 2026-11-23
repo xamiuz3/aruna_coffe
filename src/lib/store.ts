@@ -28,6 +28,7 @@ const STORAGE_KEY_MUTATIONS = 'aruna_cafe_mutations';
 const STORAGE_KEY_RECIPES = 'aruna_cafe_recipes';
 const STORAGE_KEY_TABLES = 'aruna_cafe_tables';
 const STORAGE_KEY_PAYMENT_SETTINGS = 'aruna_cafe_payment_settings';
+const STORAGE_KEY_CATEGORIES = 'aruna_cafe_categories';
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   qris_image_url: '',
@@ -37,6 +38,17 @@ export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   bank_account_holder: 'ARUNA COFFEE & KITCHEN',
   payment_instructions: 'Silakan scan QRIS di atas atau transfer ke rekening bank. Cantumkan nama pemesan pada berita transfer.',
 };
+
+// ========================================================
+// HIGH-PERFORMANCE IN-MEMORY & SWR CACHE
+// ========================================================
+let memoryCacheMenu: { data: MenuItem[]; timestamp: number } | null = null;
+let memoryCacheCats: { data: MenuCategory[]; timestamp: number } | null = null;
+let memoryCacheTables: { data: TableItem[]; timestamp: number } | null = null;
+let memoryCacheSettings: { data: PaymentSettings; timestamp: number } | null = null;
+let memoryCacheOrders: { data: Order[]; timestamp: number } | null = null;
+
+const CACHE_TTL_MS = 60 * 1000; // 60 detik cache di memori
 
 function getStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -59,57 +71,108 @@ function setStorage<T>(key: string, value: T): void {
 }
 
 export const CafeStore = {
-  // 0. PENGATURAN PEMBAYARAN (QRIS & BANK)
-  async getPaymentSettings(): Promise<PaymentSettings> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('payment_settings').select('*').limit(1).single();
-      if (!error && data) return data as PaymentSettings;
-    }
+  // SYNC INITIALIZERS UNTUK 0-MILLISECOND INITIAL RENDER
+  getInitialMenuItems(): MenuItem[] {
+    if (memoryCacheMenu) return memoryCacheMenu.data;
+    const stored = getStorage<MenuItem[] | null>(STORAGE_KEY_MENU, null);
+    if (stored && stored.length > 0) return stored;
+    return INITIAL_MENU_ITEMS;
+  },
+
+  getInitialCategories(): MenuCategory[] {
+    if (memoryCacheCats) return memoryCacheCats.data;
+    const stored = getStorage<MenuCategory[] | null>(STORAGE_KEY_CATEGORIES, null);
+    if (stored && stored.length > 0) return stored;
+    return INITIAL_CATEGORIES;
+  },
+
+  getInitialOrders(): Order[] {
+    if (memoryCacheOrders) return memoryCacheOrders.data;
+    return getStorage<Order[]>(STORAGE_KEY_ORDERS, []);
+  },
+
+  getInitialTables(): TableItem[] {
+    if (memoryCacheTables) return memoryCacheTables.data;
+    return getStorage<TableItem[]>(STORAGE_KEY_TABLES, INITIAL_TABLES);
+  },
+
+  getInitialPaymentSettings(): PaymentSettings {
+    if (memoryCacheSettings) return memoryCacheSettings.data;
     return getStorage<PaymentSettings>(STORAGE_KEY_PAYMENT_SETTINGS, DEFAULT_PAYMENT_SETTINGS);
   },
 
-  async updatePaymentSettings(settings: PaymentSettings): Promise<boolean> {
+  // 0. PENGATURAN PEMBAYARAN (QRIS & BANK)
+  async getPaymentSettings(forceRefresh = false): Promise<PaymentSettings> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheSettings && (now - memoryCacheSettings.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheSettings.data;
+    }
+
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('payment_settings').upsert({ id: 'default', ...settings });
+      try {
+        const { data, error } = await supabase.from('payment_settings').select('*').limit(1).single();
+        if (!error && data) {
+          const settings = data as PaymentSettings;
+          memoryCacheSettings = { data: settings, timestamp: now };
+          setStorage(STORAGE_KEY_PAYMENT_SETTINGS, settings);
+          return settings;
+        }
+      } catch (err) {
+        console.warn('Supabase getPaymentSettings error:', err);
+      }
+    }
+    const fallback = getStorage<PaymentSettings>(STORAGE_KEY_PAYMENT_SETTINGS, DEFAULT_PAYMENT_SETTINGS);
+    memoryCacheSettings = { data: fallback, timestamp: now };
+    return fallback;
+  },
+
+  async updatePaymentSettings(settings: PaymentSettings): Promise<boolean> {
+    memoryCacheSettings = { data: settings, timestamp: Date.now() };
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('payment_settings').upsert({ id: 'default', ...settings });
+      } catch (err) {
+        console.warn('Supabase update payment error:', err);
+      }
     }
     setStorage(STORAGE_KEY_PAYMENT_SETTINGS, settings);
     return true;
   },
 
   // 1. MEJA
-  async getTables(): Promise<TableItem[]> {
+  async getTables(forceRefresh = false): Promise<TableItem[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheTables && (now - memoryCacheTables.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheTables.data;
+    }
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('tables').select('*');
-      if (!error && data) {
-        return (data as TableItem[]).sort((a, b) => {
-          const numA = parseInt(a.table_number.replace(/\D/g, ''), 10) || 0;
-          const numB = parseInt(b.table_number.replace(/\D/g, ''), 10) || 0;
-          if (numA !== numB) return numA - numB;
-          return a.table_number.localeCompare(b.table_number, undefined, { numeric: true });
-        });
+      try {
+        const { data, error } = await supabase.from('tables').select('*');
+        if (!error && data && data.length > 0) {
+          const sorted = (data as TableItem[]).sort((a, b) => {
+            const numA = parseInt(a.table_number.replace(/\D/g, ''), 10) || 0;
+            const numB = parseInt(b.table_number.replace(/\D/g, ''), 10) || 0;
+            if (numA !== numB) return numA - numB;
+            return a.table_number.localeCompare(b.table_number, undefined, { numeric: true });
+          });
+          memoryCacheTables = { data: sorted, timestamp: now };
+          setStorage(STORAGE_KEY_TABLES, sorted);
+          return sorted;
+        }
+      } catch (err) {
+        console.warn('Supabase getTables error:', err);
       }
     }
     const stored = getStorage<TableItem[]>(STORAGE_KEY_TABLES, INITIAL_TABLES);
-    const existingIds = new Set(stored.map(t => t.id));
-    const missing = INITIAL_TABLES.filter(t => !existingIds.has(t.id));
-    const combined = missing.length > 0 ? [...stored, ...missing] : stored;
-
-    combined.sort((a, b) => {
-      const numA = parseInt(a.table_number.replace(/\D/g, ''), 10) || 0;
-      const numB = parseInt(b.table_number.replace(/\D/g, ''), 10) || 0;
-      if (numA !== numB) return numA - numB;
-      return a.table_number.localeCompare(b.table_number, undefined, { numeric: true });
-    });
-
-    if (missing.length > 0) {
-      setStorage(STORAGE_KEY_TABLES, combined);
-    }
-    return combined;
+    memoryCacheTables = { data: stored, timestamp: now };
+    return stored;
   },
 
   async addTable(table: Omit<TableItem, 'id'>): Promise<TableItem> {
     const id = `tbl-${Date.now()}`;
     const newTable: TableItem = { id, ...table };
+    memoryCacheTables = null;
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('tables').insert(newTable);
@@ -124,6 +187,7 @@ export const CafeStore = {
   },
 
   async deleteTable(tableId: string): Promise<boolean> {
+    memoryCacheTables = null;
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('tables').delete().eq('id', tableId);
@@ -138,30 +202,54 @@ export const CafeStore = {
   },
 
   // 2. KATEGORI & MENU
-  async getCategories(): Promise<MenuCategory[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('menu_categories').select('*').order('display_order');
-      if (!error && data) return data as MenuCategory[];
+  async getCategories(forceRefresh = false): Promise<MenuCategory[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheCats && (now - memoryCacheCats.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheCats.data;
     }
-    return INITIAL_CATEGORIES;
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('menu_categories').select('*').order('display_order');
+        if (!error && data && data.length > 0) {
+          const cats = data as MenuCategory[];
+          memoryCacheCats = { data: cats, timestamp: now };
+          setStorage(STORAGE_KEY_CATEGORIES, cats);
+          return cats;
+        }
+      } catch (err) {
+        console.warn('Supabase getCategories error:', err);
+      }
+    }
+    const fallback = getStorage<MenuCategory[]>(STORAGE_KEY_CATEGORIES, INITIAL_CATEGORIES);
+    memoryCacheCats = { data: fallback, timestamp: now };
+    return fallback;
   },
 
-  async getMenuItems(): Promise<MenuItem[]> {
+  async getMenuItems(forceRefresh = false): Promise<MenuItem[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheMenu && (now - memoryCacheMenu.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheMenu.data;
+    }
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select('*, variants:menu_variants(*)')
-        .order('name');
-      if (!error && data) return data as MenuItem[];
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*, variants:menu_variants(*)')
+          .order('name');
+        if (!error && data && data.length > 0) {
+          const items = data as MenuItem[];
+          memoryCacheMenu = { data: items, timestamp: now };
+          setStorage(STORAGE_KEY_MENU, items);
+          return items;
+        }
+      } catch (err) {
+        console.warn('Supabase getMenuItems error, falling back to cache:', err);
+      }
     }
     const stored = getStorage<MenuItem[]>(STORAGE_KEY_MENU, INITIAL_MENU_ITEMS);
-    const existingIds = new Set(stored.map(m => m.id));
-    const missing = INITIAL_MENU_ITEMS.filter(m => !existingIds.has(m.id));
-    if (missing.length > 0) {
-      const merged = [...stored, ...missing];
-      setStorage(STORAGE_KEY_MENU, merged);
-      return merged;
-    }
+    memoryCacheMenu = { data: stored, timestamp: now };
     return stored;
   },
 
@@ -237,6 +325,7 @@ export const CafeStore = {
       }
     }
 
+    memoryCacheMenu = null;
     const currentMenuItems = getStorage<MenuItem[]>(STORAGE_KEY_MENU, INITIAL_MENU_ITEMS);
     setStorage(STORAGE_KEY_MENU, [newMenuItem, ...currentMenuItems]);
 
@@ -270,6 +359,7 @@ export const CafeStore = {
         console.warn('Supabase update menu error:', err);
       }
     }
+    memoryCacheMenu = null;
     const currentMenuItems = getStorage<MenuItem[]>(STORAGE_KEY_MENU, INITIAL_MENU_ITEMS);
     const updatedList = currentMenuItems.map(m => m.id === updatedItem.id ? { ...m, ...updatedItem } : m);
     setStorage(STORAGE_KEY_MENU, updatedList);
@@ -285,6 +375,7 @@ export const CafeStore = {
         console.warn('Supabase delete menu error:', err);
       }
     }
+    memoryCacheMenu = null;
     const currentMenuItems = getStorage<MenuItem[]>(STORAGE_KEY_MENU, INITIAL_MENU_ITEMS);
     const updatedMenu = currentMenuItems.filter(m => m.id !== menuItemId);
     setStorage(STORAGE_KEY_MENU, updatedMenu);
@@ -335,16 +426,31 @@ export const CafeStore = {
   },
 
   // 4. ORDERS
-  async getOrders(): Promise<Order[]> {
+  async getOrders(forceRefresh = false): Promise<Order[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheOrders && (now - memoryCacheOrders.timestamp < 3500)) {
+      return memoryCacheOrders.data;
+    }
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, items:order_items(*)')
-        .order('created_at', { ascending: false });
-      if (!error && data) return data as Order[];
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*, items:order_items(*)')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          const list = data as Order[];
+          memoryCacheOrders = { data: list, timestamp: now };
+          setStorage(STORAGE_KEY_ORDERS, list);
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase getOrders error:', err);
+      }
     }
 
     const stored = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    memoryCacheOrders = { data: stored, timestamp: now };
 
     // Sinkronisasi server relay /api/orders secara non-blocking di background (0ms render time)
     if (typeof window !== 'undefined') {
@@ -362,6 +468,7 @@ export const CafeStore = {
 
             if (merged.length !== stored.length) {
               setStorage(STORAGE_KEY_ORDERS, merged);
+              memoryCacheOrders = { data: merged, timestamp: Date.now() };
             }
           }
         })
@@ -468,7 +575,9 @@ export const CafeStore = {
     }
 
     const currentOrders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
-    setStorage(STORAGE_KEY_ORDERS, [newOrder, ...currentOrders]);
+    const updatedOrders = [newOrder, ...currentOrders];
+    setStorage(STORAGE_KEY_ORDERS, updatedOrders);
+    memoryCacheOrders = { data: updatedOrders, timestamp: Date.now() };
 
     // Broadcast secara real-time ke semua tab & server relay
     RealtimeOrders.broadcastNewOrder(newOrder);
@@ -501,6 +610,7 @@ export const CafeStore = {
       return o;
     });
     setStorage(STORAGE_KEY_ORDERS, updated);
+    memoryCacheOrders = { data: updated, timestamp: Date.now() };
 
     if (targetOrder) {
       RealtimeOrders.broadcastOrderUpdate(targetOrder);
@@ -558,6 +668,7 @@ export const CafeStore = {
 
     setStorage(STORAGE_KEY_RAW, materials);
     setStorage(STORAGE_KEY_ORDERS, orders);
+    memoryCacheOrders = { data: orders, timestamp: Date.now() };
     setStorage(STORAGE_KEY_MUTATIONS, [...newMutations, ...currentMutations]);
 
     return true;
@@ -575,6 +686,7 @@ export const CafeStore = {
     const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
     const updated = orders.map(o => o.id === orderId ? { ...o, majoo_recorded: value } : o);
     setStorage(STORAGE_KEY_ORDERS, updated);
+    memoryCacheOrders = { data: updated, timestamp: Date.now() };
     return true;
   },
 

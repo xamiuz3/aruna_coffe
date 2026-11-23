@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 
 export default function KasirDashboard() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
   const [typeFilter, setTypeFilter] = useState<'all' | 'order' | 'reservation'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -139,8 +139,8 @@ export default function KasirDashboard() {
       }
     });
 
-    // 2. Polling cepat 1.5 detik sebagai jaminan sinkronisasi antar perangkat HP-PC
-    const interval = setInterval(fetchOrders, 1500);
+    // 2. Polling fallback 5 detik jika koneksi realtime WebSocket sempat drop
+    const interval = setInterval(fetchOrders, 5000);
     const handleStoreUpdate = () => fetchOrders();
     window.addEventListener('arjuna_store_updated', handleStoreUpdate);
 

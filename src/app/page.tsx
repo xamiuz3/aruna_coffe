@@ -59,10 +59,10 @@ function ArunaPochaStyleContent() {
   // Navigation mode: 'order' (pesan di meja) | 'reservation' (reservasi meja)
   const [mainTab, setMainTab] = useState<'order' | 'reservation'>(initialTabQuery);
 
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [tables, setTables] = useState<TableItem[]>([]);
-  const [existingOrders, setExistingOrders] = useState<Order[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>(() => CafeStore.getInitialCategories());
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => CafeStore.getInitialMenuItems());
+  const [tables, setTables] = useState<TableItem[]>(() => CafeStore.getInitialTables());
+  const [existingOrders, setExistingOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
   const [selectedCategory, setSelectedCategory] = useState<string>('cat-all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -108,7 +108,7 @@ function ArunaPochaStyleContent() {
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [orderNotes, setOrderNotes] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'cashier' | 'qris'>('qris');
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(() => CafeStore.getInitialPaymentSettings());
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);
   const [paymentProofUrl, setPaymentProofUrl] = useState<string>('');
   const [paymentProofName, setPaymentProofName] = useState<string>('');
@@ -139,15 +139,20 @@ function ArunaPochaStyleContent() {
 
   const loadData = async () => {
     try {
-      const [cats, items, tbls, paySet, ords] = await Promise.all([
+      // 1. Fetch menu & categories dengan prioritas tinggi (instant render dari memory cache / network)
+      const [cats, items] = await Promise.all([
         CafeStore.getCategories(),
         CafeStore.getMenuItems(),
+      ]);
+      setCategories(cats);
+      setMenuItems(items);
+
+      // 2. Fetch tables, payment settings & orders di background tanpa memblokir tampilan menu
+      const [tbls, paySet, ords] = await Promise.all([
         CafeStore.getTables(),
         CafeStore.getPaymentSettings(),
         CafeStore.getOrders(),
       ]);
-      setCategories(cats);
-      setMenuItems(items);
       setTables(tbls);
       setPaymentSettings(paySet);
       setExistingOrders(ords);
@@ -2132,13 +2137,13 @@ function ArunaPochaStyleContent() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img 
-                    src={customizingItem.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'} 
-                    alt={customizingItem.name} 
+                  <img
+                    src={customizingItem.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'}
+                    alt={customizingItem.name}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80';
                     }}
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <div>
