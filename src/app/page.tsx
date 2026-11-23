@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Utensils,
+  UtensilsCrossed,
   ShoppingBag,
   Coffee,
   Sparkles,
@@ -34,7 +35,8 @@ import {
   Upload,
   Users,
   Maximize2,
-  FileText
+  FileText,
+  Lock
 } from 'lucide-react';
 
 function InstagramIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -704,7 +706,7 @@ function ArunaPochaStyleContent() {
                   }`}
               >
                 <Utensils className="w-3.5 h-3.5" />
-                <span>Menu {currentTable}</span>
+                <span>Daftar Menu</span>
               </button>
               <button
                 type="button"
@@ -728,7 +730,7 @@ function ArunaPochaStyleContent() {
                 href="https://www.instagram.com/arunacafe.smd?jplx=aDI2aXMzZWlyd2Rt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold border border-stone-700 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-200 text-xs font-bold border border-stone-700/80 transition-colors"
                 title="Instagram Resmi @arunacafe.smd"
               >
                 <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
@@ -737,20 +739,21 @@ function ArunaPochaStyleContent() {
 
               {/* Badge Nomor Meja Terkunci (Sesuai Scan QR di Meja) */}
               <div
-                className="bg-stone-800 text-stone-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-stone-700 flex items-center gap-1.5 shadow-2xs select-none"
+                className="bg-stone-800/90 text-stone-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-stone-700/80 flex items-center gap-1.5 shadow-2xs select-none"
                 title={`Meja Anda terkunci pada ${currentTable} (Sesuai Scan QR)`}
               >
                 <QrCode className="w-3.5 h-3.5 text-[#c87a58]" />
                 <span>{currentTable}</span>
               </div>
 
-              {/* Link Buka Admin Kasir */}
+              {/* Link Akses Staf Kasir POS */}
               <Link
                 href="/kasir"
-                className="hidden sm:flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 transition-all hover:text-white"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-stone-800/60 hover:bg-stone-700 text-stone-400 border border-stone-700/60 transition-all hover:text-white"
+                title="Portal Akses Staf Kasir / POS"
               >
-                <span>Buka Admin</span>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+                <Lock className="w-3 h-3 text-stone-400" />
+                <span className="text-[11px]">Kasir</span>
               </Link>
 
               {/* Tombol Keranjang Drawer */}
@@ -1379,24 +1382,24 @@ function ArunaPochaStyleContent() {
                     <span className="text-stone-400 font-bold shrink-0 text-[11px]">Populer:</span>
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('Caramel Cloud')}
+                      onClick={() => setSearchQuery('Mie Aruna')}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
                     >
-                      <span>Caramel Cloud</span>
+                      <span>Mie Aruna Gurih</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('Matcha')}
+                      onClick={() => setSearchQuery('Udang Keju')}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
                     >
-                      <span>Matcha Kyoto</span>
+                      <span>Udang Keju Goreng</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('Nasi Goreng')}
+                      onClick={() => setSearchQuery('Es Teh')}
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
                     >
-                      <span>Nasi Goreng Aruna</span>
+                      <span>Es Teh Tarik</span>
                     </button>
                   </div>
 
@@ -1434,14 +1437,9 @@ function ArunaPochaStyleContent() {
                         : 'bg-white hover:bg-stone-50 text-stone-800 border-stone-200/90 shadow-2xs'
                         }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=100&auto=format&fit=crop&q=80"
-                        alt="Semua"
-                        className="w-5 h-5 rounded-full object-cover ring-1 ring-white/80 shrink-0"
-                      />
+                      <UtensilsCrossed className="w-3.5 h-3.5" />
                       <span>Semua Menu</span>
-                      <span className="text-[10px] bg-black/15 text-white px-1.5 py-0.2 rounded-full">
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${selectedCategory === 'cat-all' ? 'bg-black/20 text-white' : 'bg-stone-100 text-stone-500'}`}>
                         {menuItems.length}
                       </span>
                     </button>
