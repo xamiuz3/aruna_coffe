@@ -1563,8 +1563,11 @@ function ArunaPochaStyleContent() {
                           <div className="aspect-square sm:aspect-[4/3] h-28 sm:h-36 md:h-44 w-full relative overflow-hidden bg-stone-100">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={item.image_url}
+                              src={item.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'}
                               alt={item.name}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80';
+                              }}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                             <div className="absolute top-2 left-2">
@@ -2131,7 +2134,14 @@ function ArunaPochaStyleContent() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={customizingItem.image_url} alt={customizingItem.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={customizingItem.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'} 
+                    alt={customizingItem.name} 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80';
+                    }}
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
                 <div>
                   <h3 className="font-black text-sm text-stone-900 uppercase leading-tight">

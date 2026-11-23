@@ -273,14 +273,14 @@ INSERT INTO public.raw_materials (id, name, unit, current_stock, minimum_stock) 
 ON CONFLICT (name) DO NOTHING;
 
 -- Data Menu
-INSERT INTO public.menu_items (id, category_id, name, description, price, is_available) VALUES
-  ('c1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Gurih (Asin)', 'Mie kenyal pedas asin khas dengan taburan ayam cincang dan 2 pangsit goreng renyah.', 12500, true),
-  ('c1111111-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Manis (Kecap)', 'Mie kenyal bumbu pedas manis kecap istimewa, ayam tabur, dan pangsit renyah.', 12500, true),
-  ('c1111111-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 'Udang Keju Goreng (3 pcs)', 'Olahan udang juicy dengan lelehan keju mozarella di tengah, digoreng garing emas.', 11000, true),
-  ('c1111111-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'Siomay Dimsum Ayam (3 pcs)', 'Siomay kukus lembut daging ayam asli dengan saus cocolan khas.', 10500, true),
-  ('c1111111-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 'Es Teh Tarik Spesial', 'Teh racikan wangi dipadu susu lembut dan es batu segar.', 8500, true),
-  ('c1111111-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 'Es Teh Manis Jumbo', 'Es teh melati segar porsi jumbo pelepas dahaga pedas.', 6000, true)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.menu_items (id, category_id, name, description, price, image_url, is_available) VALUES
+  ('c1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Gurih (Asin)', 'Mie kenyal pedas asin khas dengan taburan ayam cincang dan 2 pangsit goreng renyah.', 12500, 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=80', true),
+  ('c1111111-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Manis (Kecap)', 'Mie kenyal bumbu pedas manis kecap istimewa, ayam tabur, dan pangsit renyah.', 12500, 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=600&auto=format&fit=crop&q=80', true),
+  ('c1111111-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 'Udang Keju Goreng (3 pcs)', 'Olahan udang juicy dengan lelehan keju mozarella di tengah, digoreng garing emas.', 11000, 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80', true),
+  ('c1111111-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'Siomay Dimsum Ayam (3 pcs)', 'Siomay kukus lembut daging ayam asli dengan saus cocolan khas.', 10500, 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&auto=format&fit=crop&q=80', true),
+  ('c1111111-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 'Es Teh Tarik Spesial', 'Teh racikan wangi dipadu susu lembut dan es batu segar.', 8500, 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80', true),
+  ('c1111111-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 'Es Teh Manis Jumbo', 'Es teh melati segar porsi jumbo pelepas dahaga pedas.', 6000, 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80', true)
+ON CONFLICT (id) DO UPDATE SET image_url = EXCLUDED.image_url;
 
 -- Data Varian (Level Pedas)
 INSERT INTO public.menu_variants (menu_item_id, group_name, is_required, options) VALUES
