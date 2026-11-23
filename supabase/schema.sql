@@ -274,24 +274,24 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Data Menu
 INSERT INTO public.menu_items (id, category_id, name, description, price, is_available) VALUES
-  ('m1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Gurih (Asin)', 'Mie kenyal pedas asin khas dengan taburan ayam cincang dan 2 pangsit goreng renyah.', 12500, true),
-  ('m1111111-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Manis (Kecap)', 'Mie kenyal bumbu pedas manis kecap istimewa, ayam tabur, dan pangsit renyah.', 12500, true),
-  ('m1111111-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 'Udang Keju Goreng (3 pcs)', 'Olahan udang juicy dengan lelehan keju mozarella di tengah, digoreng garing emas.', 11000, true),
-  ('m1111111-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'Siomay Dimsum Ayam (3 pcs)', 'Siomay kukus lembut daging ayam asli dengan saus cocolan khas.', 10500, true),
-  ('m1111111-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 'Es Teh Tarik Spesial', 'Teh racikan wangi dipadu susu lembut dan es batu segar.', 8500, true),
-  ('m1111111-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 'Es Teh Manis Jumbo', 'Es teh melati segar porsi jumbo pelepas dahaga pedas.', 6000, true)
+  ('c1111111-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Gurih (Asin)', 'Mie kenyal pedas asin khas dengan taburan ayam cincang dan 2 pangsit goreng renyah.', 12500, true),
+  ('c1111111-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'Mie Aruna Manis (Kecap)', 'Mie kenyal bumbu pedas manis kecap istimewa, ayam tabur, dan pangsit renyah.', 12500, true),
+  ('c1111111-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 'Udang Keju Goreng (3 pcs)', 'Olahan udang juicy dengan lelehan keju mozarella di tengah, digoreng garing emas.', 11000, true),
+  ('c1111111-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'Siomay Dimsum Ayam (3 pcs)', 'Siomay kukus lembut daging ayam asli dengan saus cocolan khas.', 10500, true),
+  ('c1111111-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 'Es Teh Tarik Spesial', 'Teh racikan wangi dipadu susu lembut dan es batu segar.', 8500, true),
+  ('c1111111-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 'Es Teh Manis Jumbo', 'Es teh melati segar porsi jumbo pelepas dahaga pedas.', 6000, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Data Varian (Level Pedas)
 INSERT INTO public.menu_variants (menu_item_id, group_name, is_required, options) VALUES
-  ('m1111111-0000-0000-0000-000000000001', 'Level Pedas', true, '[
+  ('c1111111-0000-0000-0000-000000000001', 'Level Pedas', true, '[
     {"name": "Level 0 (Tidak Pedas)", "extra_price": 0},
     {"name": "Level 1 (Pedas Santai)", "extra_price": 0},
     {"name": "Level 2 (Pedas Sedang)", "extra_price": 0},
     {"name": "Level 3 (Pedas Nampol)", "extra_price": 1000},
     {"name": "Level 4 (Pedas Ekstrem)", "extra_price": 2000}
   ]'::jsonb),
-  ('m1111111-0000-0000-0000-000000000002', 'Level Pedas', true, '[
+  ('c1111111-0000-0000-0000-000000000002', 'Level Pedas', true, '[
     {"name": "Level 0 (Tidak Pedas)", "extra_price": 0},
     {"name": "Level 1 (Pedas Santai)", "extra_price": 0},
     {"name": "Level 2 (Pedas Sedang)", "extra_price": 0},
@@ -303,26 +303,26 @@ ON CONFLICT DO NOTHING;
 -- Data Resep (BOM - Pemotongan Bahan Baku Otomatis)
 -- Mie Asin butuh: 1 Porsi Mie, 15ml Minyak, 20g Ayam Tabur, 2 Kulit Pangsit, 10g Cabai Rawit
 INSERT INTO public.recipes (menu_item_id, raw_material_id, quantity_required) VALUES
-  ('m1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000001', 1),    -- 1 Porsi Mie
-  ('m1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000003', 15),   -- 15 ml Minyak Bumbu
-  ('m1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000004', 20),   -- 20 gram Ayam Cincang
-  ('m1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000005', 2),    -- 2 pcs Pangsit
-  ('m1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000002', 12),   -- 12 gram Cabai
+  ('c1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000001', 1),    -- 1 Porsi Mie
+  ('c1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000003', 15),   -- 15 ml Minyak Bumbu
+  ('c1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000004', 20),   -- 20 gram Ayam Cincang
+  ('c1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000005', 2),    -- 2 pcs Pangsit
+  ('c1111111-0000-0000-0000-000000000001', 'a1111111-0000-0000-0000-000000000002', 12),   -- 12 gram Cabai
   -- Mie Manis
-  ('m1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000001', 1),
-  ('m1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000003', 15),
-  ('m1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000004', 20),
-  ('m1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000005', 2),
-  ('m1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000002', 12),
+  ('c1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000001', 1),
+  ('c1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000003', 15),
+  ('c1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000004', 20),
+  ('c1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000005', 2),
+  ('c1111111-0000-0000-0000-000000000002', 'a1111111-0000-0000-0000-000000000002', 12),
   -- Udang Keju (3 pcs)
-  ('m1111111-0000-0000-0000-000000000003', 'a1111111-0000-0000-0000-000000000007', 3),
+  ('c1111111-0000-0000-0000-000000000003', 'a1111111-0000-0000-0000-000000000007', 3),
   -- Siomay Dimsum (3 pcs)
-  ('m1111111-0000-0000-0000-000000000004', 'a1111111-0000-0000-0000-000000000006', 3),
+  ('c1111111-0000-0000-0000-000000000004', 'a1111111-0000-0000-0000-000000000006', 3),
   -- Es Teh Tarik Spesial (50ml Teh + 40ml Susu)
-  ('m1111111-0000-0000-0000-000000000005', 'a1111111-0000-0000-0000-000000000008', 50),
-  ('m1111111-0000-0000-0000-000000000005', 'a1111111-0000-0000-0000-000000000009', 40),
+  ('c1111111-0000-0000-0000-000000000005', 'a1111111-0000-0000-0000-000000000008', 50),
+  ('c1111111-0000-0000-0000-000000000005', 'a1111111-0000-0000-0000-000000000009', 40),
   -- Es Teh Manis Jumbo (80ml Teh)
-  ('m1111111-0000-0000-0000-000000000006', 'a1111111-0000-0000-0000-000000000008', 80)
+  ('c1111111-0000-0000-0000-000000000006', 'a1111111-0000-0000-0000-000000000008', 80)
 ON CONFLICT (menu_item_id, raw_material_id) DO NOTHING;
 
 -- Seed Data Pengaturan Pembayaran
@@ -367,4 +367,16 @@ CREATE POLICY "Public access orders" ON public.orders FOR ALL USING (true) WITH 
 CREATE POLICY "Public access order_items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public access stock_mutations" ON public.stock_mutations FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public access payment_settings" ON public.payment_settings FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- 16. GRANT PRIVILEGES TO CLIENT ROLES (ANON & AUTHENTICATED)
+-- ============================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
 
