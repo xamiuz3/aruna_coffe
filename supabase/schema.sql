@@ -146,6 +146,18 @@ CREATE TABLE IF NOT EXISTS public.stock_mutations (
 CREATE INDEX IF NOT EXISTS idx_stock_mutations_material ON public.stock_mutations(raw_material_id);
 CREATE INDEX IF NOT EXISTS idx_stock_mutations_order ON public.stock_mutations(order_id);
 
+-- 11b. PENGATURAN PEMBAYARAN (QRIS & BANK)
+CREATE TABLE IF NOT EXISTS public.payment_settings (
+  id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+  qris_image_url TEXT,
+  qris_merchant_name VARCHAR(150) NOT NULL DEFAULT 'ARUNA COFFEE & KITCHEN',
+  bank_name VARCHAR(100) NOT NULL DEFAULT 'Bank BRI',
+  bank_account_number VARCHAR(100) NOT NULL DEFAULT '0123-01-004567-50-8',
+  bank_account_holder VARCHAR(150) NOT NULL DEFAULT 'ARUNA COFFEE & KITCHEN',
+  payment_instructions TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+
 -- ============================================================
 -- 12. FUNGSI STORED PROCEDURE: SELESAIKAN ORDER & POTONG STOK
 -- ============================================================
@@ -312,3 +324,47 @@ INSERT INTO public.recipes (menu_item_id, raw_material_id, quantity_required) VA
   -- Es Teh Manis Jumbo (80ml Teh)
   ('m1111111-0000-0000-0000-000000000006', 'a1111111-0000-0000-0000-000000000008', 80)
 ON CONFLICT (menu_item_id, raw_material_id) DO NOTHING;
+
+-- Seed Data Pengaturan Pembayaran
+INSERT INTO public.payment_settings (
+  id, 
+  qris_merchant_name, 
+  bank_name, 
+  bank_account_number, 
+  bank_account_holder, 
+  payment_instructions
+) VALUES (
+  'default',
+  'ARUNA COFFEE & KITCHEN',
+  'Bank BRI',
+  '0123-01-004567-50-8',
+  'ARUNA COFFEE & KITCHEN',
+  'Silakan scan QRIS di atas atau transfer ke rekening bank. Cantumkan nama pemesan pada berita transfer.'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- 15. ROW LEVEL SECURITY (RLS) POLICIES
+-- ============================================================
+ALTER TABLE public.tables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.menu_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.menu_variants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.raw_materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_mutations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_settings ENABLE ROW LEVEL SECURITY;
+
+-- Izinkan akses publik (baca & tulis) untuk aplikasi POS Kasir & Self-Order Tamu
+CREATE POLICY "Public access tables" ON public.tables FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access menu_categories" ON public.menu_categories FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access menu_items" ON public.menu_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access menu_variants" ON public.menu_variants FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access raw_materials" ON public.raw_materials FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access recipes" ON public.recipes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access order_items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access stock_mutations" ON public.stock_mutations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public access payment_settings" ON public.payment_settings FOR ALL USING (true) WITH CHECK (true);
+
