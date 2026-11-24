@@ -539,7 +539,11 @@ export const CafeStore = {
       }
     }
 
-    const stored = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    const fallbackOrders = isSupabaseConfigured ? [] : INITIAL_ORDERS;
+    const rawStored = getStorage<Order[]>(STORAGE_KEY_ORDERS, fallbackOrders);
+    const stored = isSupabaseConfigured
+      ? rawStored.filter(o => !['ord-101', 'res-201', 'ord-hist-101'].includes(o.id))
+      : rawStored;
     memoryCacheOrders = { data: stored, timestamp: now };
 
     // Sinkronisasi server relay /api/orders secara non-blocking di background (0ms render time)
@@ -664,7 +668,7 @@ export const CafeStore = {
       }
     }
 
-    const currentOrders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    const currentOrders = getStorage<Order[]>(STORAGE_KEY_ORDERS, isSupabaseConfigured ? [] : INITIAL_ORDERS);
     const updatedOrders = [newOrder, ...currentOrders];
     setStorage(STORAGE_KEY_ORDERS, updatedOrders);
     memoryCacheOrders = { data: updatedOrders, timestamp: Date.now() };
@@ -690,7 +694,7 @@ export const CafeStore = {
         .eq('id', orderId);
     }
 
-    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, isSupabaseConfigured ? [] : INITIAL_ORDERS);
     let targetOrder: Order | null = null;
     const updated = orders.map(o => {
       if (o.id === orderId) {
@@ -716,7 +720,7 @@ export const CafeStore = {
       }
     }
 
-    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, isSupabaseConfigured ? [] : INITIAL_ORDERS);
     const orderIndex = orders.findIndex(o => o.id === orderId);
     if (orderIndex === -1) return false;
 
@@ -773,7 +777,7 @@ export const CafeStore = {
         .eq('id', orderId);
     }
 
-    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, INITIAL_ORDERS);
+    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, isSupabaseConfigured ? [] : INITIAL_ORDERS);
     const updated = orders.map(o => o.id === orderId ? { ...o, majoo_recorded: value } : o);
     setStorage(STORAGE_KEY_ORDERS, updated);
     memoryCacheOrders = { data: updated, timestamp: Date.now() };

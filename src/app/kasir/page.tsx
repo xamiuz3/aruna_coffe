@@ -43,7 +43,7 @@ import {
 
 export default function KasirDashboard() {
   const [orders, setOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
-  const [typeFilter, setTypeFilter] = useState<'all' | 'order' | 'reservation'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'today' | 'order' | 'reservation'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -95,18 +95,26 @@ export default function KasirDashboard() {
   const fetchOrders = async () => {
     const list = await CafeStore.getOrders();
     
-    // Inisialisasi set known order IDs pertama kali
-    if (knownOrderIdsRef.current.size === 0 && list.length > 0) {
+    // Inisialisasi set known order IDs pertama kali (supaya order lama tidak memicu bunyi bel)
+    if (knownOrderIdsRef.current.size === 0) {
       list.forEach(o => knownOrderIdsRef.current.add(o.id));
       prevOrderCountRef.current = list.length;
       setOrders(list);
       return;
     }
 
-    // Deteksi apakah ada pesanan baru yang belum pernah dilihat
-    const newItems = list.filter(o => !knownOrderIdsRef.current.has(o.id));
+    // Deteksi apakah ada pesanan yang BENAR-BENAR BARU dibuat (maksimal 15 menit lalu & belum pernah dilihat)
+    const now = Date.now();
+    const newItems = list.filter(o => {
+      if (knownOrderIdsRef.current.has(o.id)) return false;
+      const orderTime = new Date(o.created_at).getTime();
+      const isRecent = !isNaN(orderTime) && (now - orderTime) < 15 * 60 * 1000;
+      return isRecent;
+    });
+
+    list.forEach(o => knownOrderIdsRef.current.add(o.id));
+
     if (newItems.length > 0) {
-      newItems.forEach(o => knownOrderIdsRef.current.add(o.id));
       triggerNewOrderAlert(newItems[0]);
     }
 
@@ -171,23 +179,30 @@ export default function KasirDashboard() {
     }, 150);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const isOrderToday = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    return d.toDateString() === new Date().toDateString();
+  };
 
   // Counts for tabs & top stats
   const allCount = orders.length;
+  const todayOrdersCount = orders.filter(o => isOrderToday(o.created_at)).length;
   const pendingCount = orders.filter(o => o.status === 'pending_payment').length;
   const orderCount = orders.filter(o => o.order_type !== 'reservation').length;
   const reservationCount = orders.filter(o => o.order_type === 'reservation').length;
 
-  const newOrdersTodayCount = orders.filter(o => o.order_type !== 'reservation' && o.status !== 'completed').length;
+  const newOrdersTodayCount = orders.filter(o => isOrderToday(o.created_at) && o.order_type !== 'reservation' && o.status !== 'completed').length;
   const pendingQrisCount = orders.filter(o => o.payment_method === 'qris' && o.status === 'pending_payment').length;
-  const reservationsTodayCount = orders.filter(o => o.order_type === 'reservation').length;
+  const reservationsTodayCount = orders.filter(o => o.order_type === 'reservation' && isOrderToday(o.created_at)).length;
   const totalReservationGuests = orders
     .filter(o => o.order_type === 'reservation')
     .reduce((sum, o) => sum + (o.guest_count || 4), 0);
 
   // Filtered orders
   const filteredOrders = orders.filter(order => {
+    if (typeFilter === 'today' && !isOrderToday(order.created_at)) return false;
     if (typeFilter === 'order' && order.order_type === 'reservation') return false;
     if (typeFilter === 'reservation' && order.order_type !== 'reservation') return false;
 
@@ -213,9 +228,16 @@ export default function KasirDashboard() {
     return true;
   });
 
+  // SORT STRICTLY: NEWEST FIRST (DESCENDING BY CREATED_AT)
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const timeA = new Date(a.created_at).getTime() || 0;
+    const timeB = new Date(b.created_at).getTime() || 0;
+    return timeB - timeA;
+  });
+
   const itemsPerPage = 8;
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
-  const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage) || 1;
+  const paginatedOrders = sortedOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const currentDateString = new Intl.DateTimeFormat('id-ID', {
     weekday: 'long',
@@ -284,7 +306,7 @@ export default function KasirDashboard() {
                   {String(newOrdersTodayCount).padStart(2, '0')}
                 </span>
                 <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                  -3 sejak 10:00
+                  {todayOrdersCount > 0 ? `${todayOrdersCount} total order hari ini` : 'Belum ada order hari ini'}
                 </span>
               </div>
               <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
@@ -416,7 +438,7 @@ export default function KasirDashboard() {
                 </div>
               </div>
 
-              {/* Filter Tabs: Semua 11, Pesanan 8, Reservasi 3 (Scrollable di Android) */}
+              {/* Filter Tabs: Semua, Hari Ini, Pesanan, Reservasi */}
               <div className="flex items-center gap-4 sm:gap-6 mt-3 sm:mt-4 overflow-x-auto no-scrollbar border-b border-transparent -mb-5 pt-1">
                 <button
                   type="button"
@@ -435,6 +457,26 @@ export default function KasirDashboard() {
                     typeFilter === 'all' ? 'bg-[#c87a58]/15 text-[#c87a58]' : 'bg-stone-100 text-stone-600'
                   }`}>
                     {allCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTypeFilter('today');
+                    setCurrentPage(1);
+                  }}
+                  className={`pb-3 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative shrink-0 ${
+                    typeFilter === 'today'
+                      ? 'text-[#c87a58] border-b-2 border-[#c87a58]'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`}
+                >
+                  <span>Hari Ini</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    typeFilter === 'today' ? 'bg-[#c87a58]/15 text-[#c87a58]' : 'bg-amber-100 text-amber-900 font-bold'
+                  }`}>
+                    {todayOrdersCount}
                   </span>
                 </button>
 
@@ -493,10 +535,15 @@ export default function KasirDashboard() {
                   const isQris = order.payment_method === 'qris';
                   const tableNumOnly = order.table_number.replace(/meja\s*/i, '') || order.table_number;
                   const isReservation = order.order_type === 'reservation';
+                  const timeInfo = formatOrderTime(order.created_at);
+                  const isPending = order.status === 'pending_payment';
+                  const isNewOrder = (timeInfo.isRecent || timeInfo.isToday) && isPending;
 
                   return (
-                    <div key={order.id} className="p-3.5 space-y-3 bg-white hover:bg-amber-50/20 transition-colors">
-                      {/* Baris 1: ID, Badge Meja, Badge Jenis, dan Jam */}
+                    <div key={order.id} className={`p-3.5 space-y-3 transition-colors ${
+                      isNewOrder ? 'bg-amber-50/80 border-l-4 border-l-[#c87a58]' : 'bg-white hover:bg-stone-50/50'
+                    }`}>
+                      {/* Baris 1: ID, Badge BARU, Badge Meja, Badge Jenis, dan Jam */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span 
@@ -505,6 +552,11 @@ export default function KasirDashboard() {
                           >
                             {formatOrderNumber(order.order_number)}
                           </span>
+                          {isNewOrder && (
+                            <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
+                              BARU
+                            </span>
+                          )}
                           <span className="px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200/90 text-[11px] font-bold text-stone-800">
                             Meja {tableNumOnly}
                           </span>
@@ -514,11 +566,14 @@ export default function KasirDashboard() {
                             {isReservation ? 'Reservasi' : 'Self-order'}
                           </span>
                         </div>
-                        <span className="text-[10px] text-stone-400 font-medium shrink-0">
-                          {isReservation 
-                            ? formatSchedule(order) 
-                            : new Date(order.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'}
-                        </span>
+                        <div className="text-right shrink-0">
+                          <span className={`text-[11px] font-bold block ${timeInfo.isToday ? 'text-emerald-700' : 'text-stone-600'}`}>
+                            {timeInfo.displayDate}
+                          </span>
+                          <span className="text-[10px] text-stone-400 font-mono block">
+                            {timeInfo.timeAgo}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Baris 2: Pemesan & Total Tagihan */}
@@ -692,18 +747,32 @@ export default function KasirDashboard() {
                     paginatedOrders.map(order => {
                       const isQris = order.payment_method === 'qris';
                       const tableNumOnly = order.table_number.replace(/meja\s*/i, '') || order.table_number;
+                      const timeInfo = formatOrderTime(order.created_at);
+                      const isPending = order.status === 'pending_payment';
+                      const isNewOrder = (timeInfo.isRecent || timeInfo.isToday) && isPending;
 
                       return (
-                        <tr key={order.id} className="hover:bg-amber-50/30 transition-colors">
+                        <tr key={order.id} className={`transition-colors ${
+                          isNewOrder 
+                            ? 'bg-amber-50/80 border-l-4 border-l-[#c87a58]' 
+                            : 'hover:bg-amber-50/20'
+                        }`}>
                           {/* 1. ORDER / BOOKING ID */}
                           <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
-                            <span 
-                              className="font-bold text-[#c87a58] text-xs block cursor-pointer hover:underline" 
-                              title={`Order ID Lengkap: ${order.order_number}`}
-                              onClick={() => setDetailOrder(order)}
-                            >
-                              {formatOrderNumber(order.order_number)}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span 
+                                className="font-bold text-[#c87a58] text-xs block cursor-pointer hover:underline" 
+                                title={`Order ID Lengkap: ${order.order_number}`}
+                                onClick={() => setDetailOrder(order)}
+                              >
+                                {formatOrderNumber(order.order_number)}
+                              </span>
+                              {isNewOrder && (
+                                <span className="px-1.5 py-0.2 rounded bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider">
+                                  BARU
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-stone-400 block font-normal mt-0.5">
                               {order.order_type === 'reservation' ? 'Reservasi' : 'Self-order'}
                             </span>
@@ -733,17 +802,28 @@ export default function KasirDashboard() {
 
                           {/* 4. ITEM / JADWAL */}
                           <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
-                            <strong className="text-stone-800 font-semibold text-xs block">
-                              {formatSchedule(order)}
-                            </strong>
-                            <button
-                              type="button"
-                              onClick={() => setDetailOrder(order)}
-                              className="text-[10px] text-stone-400 hover:text-stone-700 font-medium inline-flex items-center gap-1 transition-colors cursor-pointer mt-0.5"
-                            >
-                              <span>Lihat detail menu</span>
-                              <span>→</span>
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <strong className="text-stone-900 font-bold text-xs">
+                                {order.items?.length || 0} menu
+                              </strong>
+                              <span className="text-stone-300">·</span>
+                              <span className={`text-[11px] font-semibold ${timeInfo.isToday ? 'text-emerald-700' : 'text-stone-500'}`}>
+                                {timeInfo.displayDate}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-stone-400 font-mono">
+                                ({timeInfo.timeAgo})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setDetailOrder(order)}
+                                className="text-[10px] text-[#c87a58] hover:underline font-semibold inline-flex items-center gap-0.5 transition-colors cursor-pointer"
+                              >
+                                <span>Lihat detail menu</span>
+                                <span>→</span>
+                              </button>
+                            </div>
                           </td>
 
                           {/* 5. PEMBAYARAN */}
@@ -1088,6 +1168,62 @@ function formatOrderNumber(num: string) {
     return `#${parts[0]}-${parts[2]}`;
   }
   return `#${num}`;
+}
+
+function formatOrderTime(createdAt: string): { 
+  displayDate: string; 
+  timeStr: string;
+  timeAgo: string; 
+  isToday: boolean;
+  isRecent: boolean;
+} {
+  if (!createdAt) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false };
+  const d = new Date(createdAt);
+  if (isNaN(d.getTime())) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false };
+
+  const now = new Date();
+  const diffMs = Math.max(0, now.getTime() - d.getTime());
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+
+  const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+
+  let dateLabel = '';
+  if (isToday) {
+    dateLabel = 'Hari Ini';
+  } else if (isYesterday) {
+    dateLabel = 'Kemarin';
+  } else {
+    dateLabel = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  }
+
+  let timeAgo = '';
+  if (diffMinutes < 2) {
+    timeAgo = 'Baru saja';
+  } else if (diffMinutes < 60) {
+    timeAgo = `${diffMinutes} mnt lalu`;
+  } else if (diffHours < 24 && isToday) {
+    timeAgo = `${diffHours} jam lalu`;
+  } else if (isYesterday) {
+    timeAgo = 'Kemarin';
+  } else {
+    timeAgo = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  }
+
+  const isRecent = diffMinutes < 30 && isToday;
+
+  return {
+    displayDate: `${dateLabel}, ${timeStr}`,
+    timeStr,
+    timeAgo,
+    isToday,
+    isRecent,
+  };
 }
 
 function formatSchedule(order: Order) {

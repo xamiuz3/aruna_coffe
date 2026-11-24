@@ -35,6 +35,12 @@ export async function GET() {
     } catch (err) {
       console.warn('Supabase get orders server error:', err);
     }
+    // Jika Supabase aktif tapi gagal query, kembalikan array kosong, JANGAN inject dummy/mock data
+    return NextResponse.json({ success: true, orders: [] }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      }
+    });
   }
 
   const orders = getServerOrders();
