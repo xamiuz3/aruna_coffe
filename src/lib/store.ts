@@ -47,6 +47,9 @@ let memoryCacheCats: { data: MenuCategory[]; timestamp: number } | null = null;
 let memoryCacheTables: { data: TableItem[]; timestamp: number } | null = null;
 let memoryCacheSettings: { data: PaymentSettings; timestamp: number } | null = null;
 let memoryCacheOrders: { data: Order[]; timestamp: number } | null = null;
+let memoryCacheRaw: { data: RawMaterial[]; timestamp: number } | null = null;
+let memoryCacheRecipes: { data: RecipeItem[]; timestamp: number } | null = null;
+let memoryCacheMutations: { data: StockMutation[]; timestamp: number } | null = null;
 
 const CACHE_TTL_MS = 60 * 1000; // 60 detik cache di memori
 
@@ -99,6 +102,25 @@ export const CafeStore = {
   getInitialPaymentSettings(): PaymentSettings {
     if (memoryCacheSettings) return memoryCacheSettings.data;
     return getStorage<PaymentSettings>(STORAGE_KEY_PAYMENT_SETTINGS, DEFAULT_PAYMENT_SETTINGS);
+  },
+
+  getInitialRawMaterials(): RawMaterial[] {
+    if (memoryCacheRaw) return memoryCacheRaw.data;
+    const stored = getStorage<RawMaterial[] | null>(STORAGE_KEY_RAW, null);
+    if (stored && stored.length > 0) return stored;
+    return INITIAL_RAW_MATERIALS;
+  },
+
+  getInitialRecipes(): RecipeItem[] {
+    if (memoryCacheRecipes) return memoryCacheRecipes.data;
+    const stored = getStorage<RecipeItem[] | null>(STORAGE_KEY_RECIPES, null);
+    if (stored && stored.length > 0) return stored;
+    return INITIAL_RECIPES;
+  },
+
+  getInitialStockMutations(): StockMutation[] {
+    if (memoryCacheMutations) return memoryCacheMutations.data;
+    return getStorage<StockMutation[]>(STORAGE_KEY_MUTATIONS, []);
   },
 
   // 0. PENGATURAN PEMBAYARAN (QRIS & BANK)
@@ -254,17 +276,39 @@ export const CafeStore = {
   },
 
   // 3. BAHAN BAKU & RESEP
-  async getRawMaterials(): Promise<RawMaterial[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('raw_materials').select('*').order('name');
-      if (!error && data) return data as RawMaterial[];
+  async getRawMaterials(forceRefresh = false): Promise<RawMaterial[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheRaw && (now - memoryCacheRaw.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheRaw.data;
     }
-    return getStorage<RawMaterial[]>(STORAGE_KEY_RAW, INITIAL_RAW_MATERIALS);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const queryPromise = supabase.from('raw_materials').select('*').order('name');
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 2500)
+        );
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+        if (!error && data && data.length > 0) {
+          const list = data as RawMaterial[];
+          memoryCacheRaw = { data: list, timestamp: now };
+          setStorage(STORAGE_KEY_RAW, list);
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase getRawMaterials error:', err);
+      }
+    }
+    const fallback = getStorage<RawMaterial[]>(STORAGE_KEY_RAW, INITIAL_RAW_MATERIALS);
+    memoryCacheRaw = { data: fallback, timestamp: now };
+    return fallback;
   },
 
   async addRawMaterial(material: Omit<RawMaterial, 'id'>): Promise<RawMaterial> {
     const id = `rm-${Date.now()}`;
     const created: RawMaterial = { id, ...material, updated_at: new Date().toISOString() };
+    memoryCacheRaw = null;
+    memoryCacheMutations = null;
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -294,17 +338,37 @@ export const CafeStore = {
     return created;
   },
 
-  async getRecipes(): Promise<RecipeItem[]> {
+  async getRecipes(forceRefresh = false): Promise<RecipeItem[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheRecipes && (now - memoryCacheRecipes.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheRecipes.data;
+    }
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('recipes').select('*, raw_material:raw_materials(*)');
-      if (!error && data) return data as RecipeItem[];
+      try {
+        const queryPromise = supabase.from('recipes').select('*, raw_material:raw_materials(*)');
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 2500)
+        );
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+        if (!error && data && data.length > 0) {
+          const list = data as RecipeItem[];
+          memoryCacheRecipes = { data: list, timestamp: now };
+          setStorage(STORAGE_KEY_RECIPES, list);
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase getRecipes error:', err);
+      }
     }
     const recipes = getStorage<RecipeItem[]>(STORAGE_KEY_RECIPES, INITIAL_RECIPES);
-    const materials = await this.getRawMaterials();
-    return recipes.map(r => ({
+    const materials = this.getInitialRawMaterials();
+    const mapped = recipes.map(r => ({
       ...r,
       raw_material: materials.find(m => m.id === r.raw_material_id)
     }));
+    memoryCacheRecipes = { data: mapped, timestamp: now };
+    return mapped;
   },
 
   async addMenuItemWithRecipe(
@@ -345,6 +409,8 @@ export const CafeStore = {
       }
     }
 
+    memoryCacheMenu = null;
+    memoryCacheRecipes = null;
     const currentRecipes = getStorage<RecipeItem[]>(STORAGE_KEY_RECIPES, INITIAL_RECIPES);
     setStorage(STORAGE_KEY_RECIPES, [...currentRecipes, ...newRecipes]);
 
@@ -380,6 +446,8 @@ export const CafeStore = {
     const updatedMenu = currentMenuItems.filter(m => m.id !== menuItemId);
     setStorage(STORAGE_KEY_MENU, updatedMenu);
 
+    memoryCacheMenu = null;
+    memoryCacheRecipes = null;
     const currentRecipes = getStorage<RecipeItem[]>(STORAGE_KEY_RECIPES, INITIAL_RECIPES);
     const updatedRecipes = currentRecipes.filter(r => r.menu_item_id !== menuItemId);
     setStorage(STORAGE_KEY_RECIPES, updatedRecipes);
@@ -410,19 +478,41 @@ export const CafeStore = {
       }
     }
 
+    memoryCacheRecipes = null;
     setStorage(STORAGE_KEY_RECIPES, [...filtered, ...newRecipes]);
     return true;
   },
 
-  async getStockMutations(): Promise<StockMutation[]> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('stock_mutations')
-        .select('*, raw_material:raw_materials(*)')
-        .order('created_at', { ascending: false });
-      if (!error && data) return data as StockMutation[];
+  async getStockMutations(forceRefresh = false): Promise<StockMutation[]> {
+    const now = Date.now();
+    if (!forceRefresh && memoryCacheMutations && (now - memoryCacheMutations.timestamp < CACHE_TTL_MS)) {
+      return memoryCacheMutations.data;
     }
-    return getStorage<StockMutation[]>(STORAGE_KEY_MUTATIONS, []);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const queryPromise = supabase
+          .from('stock_mutations')
+          .select('*, raw_material:raw_materials(*)')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 2500)
+        );
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+        if (!error && data) {
+          const list = data as StockMutation[];
+          memoryCacheMutations = { data: list, timestamp: now };
+          setStorage(STORAGE_KEY_MUTATIONS, list);
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase getStockMutations error:', err);
+      }
+    }
+    const fallback = getStorage<StockMutation[]>(STORAGE_KEY_MUTATIONS, []);
+    memoryCacheMutations = { data: fallback, timestamp: now };
+    return fallback;
   },
 
   // 4. ORDERS
@@ -698,6 +788,8 @@ export const CafeStore = {
 
     materials[matIndex].current_stock = Math.max(0, materials[matIndex].current_stock + addAmount);
     setStorage(STORAGE_KEY_RAW, materials);
+    memoryCacheRaw = null;
+    memoryCacheMutations = null;
 
     const currentMutations = getStorage<StockMutation[]>(STORAGE_KEY_MUTATIONS, []);
     const newMut: StockMutation = {

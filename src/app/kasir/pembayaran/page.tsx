@@ -34,8 +34,8 @@ import {
 } from 'lucide-react';
 
 export default function PengaturanPembayaranPage() {
-  const [settings, setSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [settings, setSettings] = useState<PaymentSettings>(() => CafeStore.getInitialPaymentSettings());
+  const [loading, setLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
   const [copiedAccount, setCopiedAccount] = useState<boolean>(false);

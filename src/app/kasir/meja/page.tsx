@@ -33,8 +33,14 @@ interface TableWithQR extends TableItem {
 }
 
 export default function TableQRGeneratorPage() {
-  const [tables, setTables] = useState<TableWithQR[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tables, setTables] = useState<TableWithQR[]>(() => {
+    const raw = CafeStore.getInitialTables();
+    return raw.map(tbl => ({
+      ...tbl,
+      orderUrl: `/order?table=${encodeURIComponent(tbl.table_number)}`,
+    }));
+  });
+  const [loading, setLoading] = useState(false);
   
   // Pagination & Search State
   const [currentPage, setCurrentPage] = useState(1);

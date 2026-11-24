@@ -37,8 +37,8 @@ import {
 type DatePreset = 'all' | 'today' | 'yesterday' | 'last7' | 'last30' | 'this_month' | 'custom';
 
 export default function HistoriPembayaranPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [orders, setOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
+  const [loading, setLoading] = useState<boolean>(false);
   
   // Filter states
   const [datePreset, setDatePreset] = useState<DatePreset>('all');

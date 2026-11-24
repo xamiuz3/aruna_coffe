@@ -6,13 +6,13 @@ import { CafeStore } from '@/lib/store';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminTopNav } from '@/components/AdminTopNav';
 import { RawMaterial, RecipeItem, StockMutation, MenuItem, MenuCategory, MenuVariant } from '@/lib/types';
-import { 
-  ArrowLeft, 
-  Layers, 
-  Plus, 
-  AlertTriangle, 
-  Clock, 
-  BookOpen, 
+import {
+  ArrowLeft,
+  Layers,
+  Plus,
+  AlertTriangle,
+  Clock,
+  BookOpen,
   CheckCircle,
   RefreshCw,
   Package,
@@ -165,9 +165,8 @@ function SearchableMaterialSelect({
                       onChange(mat.id);
                       setIsOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2 hover:bg-amber-50/80 transition-colors cursor-pointer ${
-                      isSelected ? 'bg-amber-50 font-black text-[#c87a58]' : 'text-stone-800'
-                    }`}
+                    className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2 hover:bg-amber-50/80 transition-colors cursor-pointer ${isSelected ? 'bg-amber-50 font-black text-[#c87a58]' : 'text-stone-800'
+                      }`}
                   >
                     <div className="flex flex-col min-w-0">
                       <span className="truncate font-bold text-xs">{mat.name}</span>
@@ -178,11 +177,10 @@ function SearchableMaterialSelect({
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span
-                        className={`text-[9px] font-mono px-2 py-0.5 rounded-md ${
-                          mat.current_stock <= mat.minimum_stock
+                        className={`text-[9px] font-mono px-2 py-0.5 rounded-md ${mat.current_stock <= mat.minimum_stock
                             ? 'bg-rose-100 text-rose-700 font-bold'
                             : 'bg-stone-100 text-stone-700 font-semibold'
-                        }`}
+                          }`}
                       >
                         Sisa: {mat.current_stock.toLocaleString('id-ID')} {mat.unit}
                       </span>
@@ -200,11 +198,11 @@ function SearchableMaterialSelect({
 }
 
 export default function StokManagementPage() {
-  const [materials, setMaterials] = useState<RawMaterial[]>([]);
-  const [recipes, setRecipes] = useState<RecipeItem[]>([]);
+  const [materials, setMaterials] = useState<RawMaterial[]>(() => CafeStore.getInitialRawMaterials());
+  const [recipes, setRecipes] = useState<RecipeItem[]>(() => CafeStore.getInitialRecipes());
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => CafeStore.getInitialMenuItems());
   const [categories, setCategories] = useState<MenuCategory[]>(() => CafeStore.getInitialCategories());
-  const [mutations, setMutations] = useState<StockMutation[]>([]);
+  const [mutations, setMutations] = useState<StockMutation[]>(() => CafeStore.getInitialStockMutations());
   const [activeTab, setActiveTab] = useState<'stok' | 'resep' | 'mutasi'>('stok');
 
   // Modal 1: Restock Bahan
@@ -320,18 +318,13 @@ export default function StokManagementPage() {
   };
 
   const loadData = async () => {
-    const [mats, recs, items, muts, cats] = await Promise.all([
+    // 1. Prioritas utama: Bahan baku & Resep
+    const [mats, recs] = await Promise.all([
       CafeStore.getRawMaterials(),
       CafeStore.getRecipes(),
-      CafeStore.getMenuItems(),
-      CafeStore.getStockMutations(),
-      CafeStore.getCategories(),
     ]);
     setMaterials(mats);
     setRecipes(recs);
-    setMenuItems(items);
-    setMutations(muts);
-    setCategories(cats);
 
     // Default first material id for new menu recipe line
     if (mats.length > 0) {
@@ -342,6 +335,16 @@ export default function StokManagementPage() {
         return prev;
       });
     }
+
+    // 2. Load background items, mutasi & kategori secara non-blocking
+    const [items, muts, cats] = await Promise.all([
+      CafeStore.getMenuItems(),
+      CafeStore.getStockMutations(),
+      CafeStore.getCategories(),
+    ]);
+    setMenuItems(items);
+    setMutations(muts);
+    setCategories(cats);
   };
 
   useEffect(() => {
@@ -528,7 +531,7 @@ export default function StokManagementPage() {
     }
 
     setIsSubmitting(true);
-    const existingOtherVariants = editingMenuItem.variants?.filter(v => 
+    const existingOtherVariants = editingMenuItem.variants?.filter(v =>
       !v.group_name.toLowerCase().includes('suhu') &&
       !v.group_name.toLowerCase().includes('pedas') &&
       !v.group_name.toLowerCase().includes('gula') &&
@@ -576,7 +579,7 @@ export default function StokManagementPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f5f0] text-stone-900 flex flex-col lg:flex-row items-start font-sans">
-      
+
       {/* 1. SIDEBAR KASIR (BISA DI-MINIMIZE & RESPONSIF HP/TABLET) */}
       <AdminSidebar currentPath="/kasir/stok" />
 
@@ -586,7 +589,7 @@ export default function StokManagementPage() {
         <AdminTopNav />
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          
+
           {/* Header & Aksi Cepat Tambah */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-stone-300">
             <div>
@@ -646,33 +649,30 @@ export default function StokManagementPage() {
           <div className="flex gap-2 bg-white p-2 rounded-2xl border border-stone-200 shadow-xs">
             <button
               onClick={() => setActiveTab('stok')}
-              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                activeTab === 'stok'
+              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${activeTab === 'stok'
                   ? 'bg-stone-900 text-white shadow-xs'
                   : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
-              }`}
+                }`}
             >
               <Package className="w-4 h-4" />
               <span>Stok Bahan Baku ({materials.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('resep')}
-              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                activeTab === 'resep'
+              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${activeTab === 'resep'
                   ? 'bg-stone-900 text-white shadow-xs'
                   : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
-              }`}
+                }`}
             >
               <BookOpen className="w-4 h-4" />
               <span>Master Resep Menu ({menuItems.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('mutasi')}
-              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
-                activeTab === 'mutasi'
+              className={`flex-1 text-xs py-2.5 px-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${activeTab === 'mutasi'
                   ? 'bg-stone-900 text-white shadow-xs'
                   : 'bg-stone-50 text-stone-700 hover:bg-stone-100'
-              }`}
+                }`}
             >
               <Clock className="w-4 h-4" />
               <span>Riwayat Pemotongan Stok</span>
@@ -810,11 +810,10 @@ export default function StokManagementPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleToggleAvailability(item)}
-                                  className={`text-[9px] font-black px-1.5 py-0.2 rounded-full border transition-all cursor-pointer ${
-                                    item.is_available 
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100' 
+                                  className={`text-[9px] font-black px-1.5 py-0.2 rounded-full border transition-all cursor-pointer ${item.is_available
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
                                       : 'bg-stone-200 text-stone-600 border-stone-300 hover:bg-stone-300'
-                                  }`}
+                                    }`}
                                   title="Klik untuk ubah status Tersedia / Habis"
                                 >
                                   {item.is_available ? 'Tersedia' : 'Habis'}
@@ -825,11 +824,10 @@ export default function StokManagementPage() {
                             </div>
                           </div>
 
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${
-                            itemRecipes.length > 0 
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${itemRecipes.length > 0
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : 'bg-red-50 text-red-800 border-red-200'
-                          }`}>
+                            }`}>
                             {itemRecipes.length} Bahan
                           </span>
                         </div>
@@ -1114,7 +1112,7 @@ export default function StokManagementPage() {
       {isAddMenuOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           <div className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-200">
-            
+
             {/* 1. FIXED MODAL HEADER */}
             <div className="px-5 sm:px-6 py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -1276,9 +1274,8 @@ export default function StokManagementPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {/* Opsi 1: Pilihan Suhu (Hot / Iced) */}
-                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                    addTempVariant ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                  }`}>
+                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${addTempVariant ? 'bg-amber-50/80 border-amber-300 ring-1 ring-amber-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                    }`}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <Coffee className="w-4 h-4 text-[#c87a58]" />
@@ -1297,9 +1294,8 @@ export default function StokManagementPage() {
                   </label>
 
                   {/* Opsi 2: Level Pedas */}
-                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                    addSpicyVariant ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                  }`}>
+                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${addSpicyVariant ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                    }`}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <Flame className="w-4 h-4 text-rose-600" />
@@ -1318,9 +1314,8 @@ export default function StokManagementPage() {
                   </label>
 
                   {/* Opsi 3: Level Gula */}
-                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                    addSugarVariant ? 'bg-stone-100 border-stone-400 ring-1 ring-stone-400' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                  }`}>
+                  <label className={`flex flex-col justify-between p-3 rounded-2xl border transition-all cursor-pointer ${addSugarVariant ? 'bg-stone-100 border-stone-400 ring-1 ring-stone-400' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                    }`}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-4 h-4 text-amber-600" />
@@ -1478,7 +1473,7 @@ export default function StokManagementPage() {
       {editingMenuForRecipe && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-hidden">
           <div className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-200">
-            
+
             {/* 1. FIXED MODAL HEADER */}
             <div className="px-5 sm:px-6 py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -1506,7 +1501,7 @@ export default function StokManagementPage() {
 
             {/* 2. SCROLLABLE FORM BODY */}
             <form id="edit-recipe-form" onSubmit={handleSaveEditRecipe} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 bg-stone-50/60 pb-16">
-              
+
               {/* Edit / Upload Foto Menu */}
               <div className="bg-white p-5 rounded-2xl border border-stone-200/90 shadow-2xs space-y-3">
                 <div className="flex items-center gap-2 border-b border-stone-100 pb-2.5">
@@ -1696,8 +1691,8 @@ export default function StokManagementPage() {
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => setEditingMenuItem(null)} 
+              <button
+                onClick={() => setEditingMenuItem(null)}
                 className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1707,7 +1702,7 @@ export default function StokManagementPage() {
             {/* Scrollable Form Body */}
             <div className="flex-1 overflow-y-auto min-h-0 p-5 sm:p-6 bg-stone-50/60 pb-12">
               <form id="edit-menu-form" onSubmit={handleSaveEditMenu} className="space-y-5 text-xs">
-                
+
                 {/* Info Produk */}
                 <div className="space-y-3 bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-2xs">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-2">
@@ -1761,11 +1756,10 @@ export default function StokManagementPage() {
                       <button
                         type="button"
                         onClick={() => setEditMenuAvailable(!editMenuAvailable)}
-                        className={`w-full p-2.5 rounded-xl border font-bold flex items-center justify-between transition-colors ${
-                          editMenuAvailable 
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
+                        className={`w-full p-2.5 rounded-xl border font-bold flex items-center justify-between transition-colors ${editMenuAvailable
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                             : 'bg-stone-100 text-stone-600 border-stone-300'
-                        }`}
+                          }`}
                       >
                         <span>{editMenuAvailable ? '● Menu Tersedia (Bisa Dipesan)' : '○ Menu Habis (Nonaktif)'}</span>
                         <span className="text-[10px] underline">{editMenuAvailable ? 'Ubah ke Habis' : 'Ubah ke Tersedia'}</span>
@@ -1833,9 +1827,8 @@ export default function StokManagementPage() {
 
                   <div className="space-y-2.5">
                     {/* Opsi 1: Pilihan Suhu (Hot / Iced) */}
-                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      editTempVariant ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                    }`}>
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${editTempVariant ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                      }`}>
                       <input
                         type="checkbox"
                         checked={editTempVariant}
@@ -1855,9 +1848,8 @@ export default function StokManagementPage() {
                     </label>
 
                     {/* Opsi 2: Level Pedas */}
-                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      editSpicyVariant ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                    }`}>
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${editSpicyVariant ? 'bg-rose-50/70 border-rose-300 ring-1 ring-rose-300' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                      }`}>
                       <input
                         type="checkbox"
                         checked={editSpicyVariant}
@@ -1877,9 +1869,8 @@ export default function StokManagementPage() {
                     </label>
 
                     {/* Opsi 3: Level Gula */}
-                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      editSugarVariant ? 'bg-stone-100 border-stone-400' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
-                    }`}>
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${editSugarVariant ? 'bg-stone-100 border-stone-400' : 'bg-stone-50/60 border-stone-200 hover:border-stone-300'
+                      }`}>
                       <input
                         type="checkbox"
                         checked={editSugarVariant}

@@ -29,8 +29,8 @@ import {
 } from 'lucide-react';
 
 export default function AdminReservasiPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [orders, setOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
+  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'tomorrow' | 'upcoming' | 'completed'>('all');
   const [customDate, setCustomDate] = useState<string>('');
