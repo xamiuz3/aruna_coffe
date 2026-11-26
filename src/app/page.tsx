@@ -36,7 +36,8 @@ import {
   Users,
   Maximize2,
   FileText,
-  Lock
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 
 function InstagramIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -671,105 +672,67 @@ function ArunaPochaStyleContent() {
       {/* ======================================================== */}
       {/* 1. TOP NAVBAR                                            */}
       {/* ======================================================== */}
-      <header className="sticky top-0 z-40 bg-[#1c1917]/95 backdrop-blur-md border-b border-stone-800 text-stone-100 shadow-md">
+      <header className="sticky top-0 z-40 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200 text-stone-900 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16 sm:h-18">
 
-            {/* Brand Logo */}
+            {/* Brand Logo - Matching Figma */}
             <Link href="/" className="flex items-center gap-3 group shrink-0">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-white/10 group-hover:scale-105 transition-transform bg-[#f7f5f0]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/aruna-logo.jpg"
-                  alt="Aruna Cafe Logo"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-10 h-10 rounded-2xl border border-stone-300 flex items-center justify-center bg-white shadow-2xs group-hover:border-stone-400 transition-colors">
+                <Coffee className="w-5 h-5 text-stone-800" />
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-black tracking-[0.2em] text-white uppercase group-hover:text-amber-300 transition-colors">
-                    ARUNA
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black uppercase tracking-wider shadow-2xs">
-                    BUKA
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest">
-                  Coffee & Kitchen
+                <span className="text-base sm:text-lg font-bold tracking-[0.22em] text-stone-900 uppercase font-serif">
+                  ARUNA
+                </span>
+                <span className="text-[9px] font-semibold text-stone-500 uppercase tracking-[0.25em]">
+                  CAFE & SPACE
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation Tabs */}
-            <nav className="hidden md:flex items-center gap-2 text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setMainTab('order')}
-                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ${mainTab === 'order'
-                  ? 'bg-[#c87a58] text-white border-[#c87a58] shadow-xs'
-                  : 'text-stone-300 hover:text-white border-transparent hover:bg-stone-800/60'
-                  }`}
-              >
-                <Utensils className="w-3.5 h-3.5" />
-                <span>Daftar Menu</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMainTab('reservation')}
-                className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ${mainTab === 'reservation'
-                  ? 'bg-[#c87a58] text-white border-[#c87a58] shadow-xs'
-                  : 'text-stone-300 hover:text-white border-transparent hover:bg-stone-800/60'
-                  }`}
-              >
-                <CalendarDays className="w-3.5 h-3.5" />
-                <span>Reservasi Meja</span>
-              </button>
-              <a href="#tentang-kami" className="px-3 py-1.5 text-stone-400 hover:text-stone-200 transition-colors">Tentang Kami</a>
-              <a href="#lokasi" className="px-3 py-1.5 text-stone-400 hover:text-stone-200 transition-colors">Lokasi & Jam</a>
-            </nav>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              {/* Instagram Official Link */}
+            {/* Actions: Akses Staf, Table, Cart */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              {/* Instagram link */}
               <a
                 href="https://www.instagram.com/arunacafe.smd?jplx=aDI2aXMzZWlyd2Rt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700 text-stone-200 text-xs font-bold border border-stone-700/80 transition-colors"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-stone-200/50 text-stone-600 hover:text-stone-900 text-xs font-medium transition-colors"
                 title="Instagram Resmi @arunacafe.smd"
               >
-                <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
+                <InstagramIcon className="w-3.5 h-3.5 text-stone-500" />
                 <span>@arunacafe.smd</span>
               </a>
 
-              {/* Badge Nomor Meja Terkunci (Sesuai Scan QR di Meja) */}
+              {/* Akses staf - Matching Figma top right */}
+              <Link
+                href="/kasir"
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl text-stone-700 hover:text-stone-950 hover:bg-stone-200/60 border border-transparent hover:border-stone-300 transition-all"
+                title="Portal Akses Staf / Kasir POS"
+              >
+                <ShieldCheck className="w-4 h-4 text-stone-600" />
+                <span>Akses staf</span>
+              </Link>
+
+              {/* Locked Table Pill */}
               <div
-                className="bg-stone-800/90 text-stone-200 text-xs font-bold px-3 py-1.5 rounded-xl border border-stone-700/80 flex items-center gap-1.5 shadow-2xs select-none"
+                className="bg-stone-100 text-stone-700 text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-stone-200 flex items-center gap-1.5 shadow-2xs select-none"
                 title={`Meja Anda terkunci pada ${currentTable} (Sesuai Scan QR)`}
               >
-                <QrCode className="w-3.5 h-3.5 text-[#c87a58]" />
+                <QrCode className="w-3.5 h-3.5 text-stone-500" />
                 <span>{currentTable}</span>
               </div>
 
-              {/* Link Akses Staf Kasir POS */}
-              <Link
-                href="/kasir"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-stone-800/60 hover:bg-stone-700 text-stone-400 border border-stone-700/60 transition-all hover:text-white"
-                title="Portal Akses Staf Kasir / POS"
-              >
-                <Lock className="w-3 h-3 text-stone-400" />
-                <span className="text-[11px]">Kasir</span>
-              </Link>
-
-              {/* Tombol Keranjang Drawer */}
+              {/* Keranjang Drawer Button */}
               <button
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
-                className="relative flex items-center gap-2 px-3.5 py-1.5 sm:py-2 rounded-xl bg-[#c87a58] hover:bg-[#b86948] text-white font-black text-xs transition-transform active:scale-95 shadow-md cursor-pointer"
+                className="relative flex items-center gap-2 px-3.5 py-1.5 sm:py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs transition-transform active:scale-95 shadow-xs cursor-pointer"
               >
-                <ShoppingBag className="w-4 h-4" />
+                <ShoppingBag className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Keranjang</span>
-                <span className="min-w-5 h-5 px-1.5 flex items-center justify-center rounded-md bg-stone-900 text-amber-300 text-[10px] font-black">
+                <span className="min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-stone-100 text-stone-900 text-[10px] font-black">
                   {totalCartCount}
                 </span>
               </button>
@@ -1330,91 +1293,174 @@ function ArunaPochaStyleContent() {
         /* REGULAR ORDER DINE-IN VIEW                               */
         /* ======================================================== */
         <>
-          {/* 2. HERO BANNER EDGE-TO-EDGE */}
-          <section className="relative w-full bg-[#181513] text-stone-100 overflow-hidden border-b border-stone-800">
-            <div className="md:absolute md:top-0 md:bottom-0 md:right-0 md:w-[48%] lg:w-[50%] w-full h-64 sm:h-80 md:h-full relative overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop&q=80"
-                alt="Aruna Coffee & Kitchen Atmosphere"
-                className="w-full h-full object-cover object-center filter contrast-105 brightness-90 hover:scale-105 transition-transform duration-700 ease-out"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#181513] via-[#181513]/70 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none" />
-            </div>
+          {/* 2. HERO BANNER - EXACT FIGMA DESIGN */}
+          <section className="relative w-full bg-[#faf8f5] text-stone-900 overflow-hidden border-b border-stone-200/80">
+            {/* Concentric Decorative Rings on the Left (Figma) */}
+            <div className="absolute -left-56 sm:-left-44 top-1/2 -translate-y-1/2 w-[460px] h-[460px] sm:w-[600px] sm:h-[600px] rounded-full border border-stone-300/50 pointer-events-none" />
+            <div className="absolute -left-40 sm:-left-28 top-1/2 -translate-y-1/2 w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] rounded-full border border-stone-300/50 pointer-events-none" />
+            <div className="absolute -left-24 sm:-left-14 top-1/2 -translate-y-1/2 w-[220px] h-[220px] sm:w-[320px] sm:h-[320px] rounded-full border border-stone-300/50 pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-              <div className="grid grid-cols-1 md:grid-cols-12 min-h-[380px] md:min-h-[440px] items-center">
-                <div className="md:col-span-7 lg:col-span-6 py-10 md:py-14 pr-0 md:pr-8 flex flex-col justify-center space-y-4 text-left">
-
-                  <div className="inline-flex items-center gap-2 bg-[#c87a58]/20 border border-[#c87a58]/40 px-3 py-1 rounded-full text-[11px] font-bold text-amber-300 tracking-wider uppercase w-fit">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Specialty Coffee & Artisan Kitchen</span>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12 sm:pt-16 pb-10">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+                
+                {/* Left Column: Heading & Description */}
+                <div className="lg:col-span-6 flex flex-col justify-center text-left space-y-4">
+                  {/* Eyebrow */}
+                  <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-stone-600">
+                    <Sparkles className="w-3.5 h-3.5 text-stone-500" />
+                    <span>Selamat datang di Aruna</span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black font-serif tracking-tight leading-[1.1] text-white">
-                    Temukan rasa favoritmu.
+                  {/* Serif Heading */}
+                  <h1 className="text-4xl sm:text-5xl lg:text-[58px] font-bold font-serif tracking-tight leading-[1.12] text-stone-900">
+                    Waktu yang<br />
+                    baik,<br />
+                    <span className="italic font-normal">dimulai di sini.</span>
                   </h1>
 
-                  <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-lg font-medium">
-                    Diracik hangat, disajikan dengan sepenuh hati. Nikmati self-order langsung dari meja dengan pembayaran QRIS BRI Merchant & Kasir tanpa antre.
+                  {/* Description */}
+                  <p className="text-sm sm:text-base text-stone-600 leading-relaxed max-w-md pt-1">
+                    Nikmati kopi, makanan, dan ruang nyaman di tengah Samarinda Seberang. Pilih kebutuhanmu untuk memulai.
                   </p>
+                </div>
 
-                  <div className="pt-2 flex items-center gap-3 flex-wrap">
-                    <a
-                      href="#menu"
-                      className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-[#c87a58] to-[#b86948] hover:from-[#b86948] hover:to-[#a25938] text-white font-black text-xs sm:text-sm uppercase tracking-wider transition-all shadow-lg shadow-orange-900/30 hover:scale-[1.02] active:scale-95 cursor-pointer border border-white/20"
-                    >
-                      <span>PESAN SEKARANG!</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
+                {/* Right Column: Two Interactive Cards (Figma) */}
+                <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                  
+                  {/* Card 01 - Dine In */}
+                  <div
+                    onClick={() => {
+                      setMainTab('order');
+                      const el = document.getElementById('menu');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="group relative bg-[#dce7de] hover:bg-[#d4e2d7] rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-xs hover:shadow-md border border-stone-300/40 overflow-hidden min-h-[340px] sm:min-h-[380px]"
+                  >
+                    {/* Background subtle curve */}
+                    <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/20 pointer-events-none transition-transform group-hover:scale-110 duration-500" />
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMainTab('reservation');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="inline-flex items-center gap-2 px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm uppercase tracking-wider transition-all border border-white/20 cursor-pointer backdrop-blur-xs"
-                    >
-                      <CalendarDays className="w-4 h-4" />
-                      <span>Reservasi Meja</span>
-                    </button>
+                    <div>
+                      <span className="text-xs font-mono font-medium text-stone-500 tracking-widest block mb-8">
+                        01
+                      </span>
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-xs text-stone-800 mb-8 group-hover:scale-105 transition-transform">
+                        <UtensilsCrossed className="w-6 h-6 stroke-[1.8]" />
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900 tracking-tight">
+                        Dine In
+                      </h2>
+                      <p className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed mt-2.5 max-w-[220px]">
+                        Pesan langsung dari meja, tanpa perlu antre.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-stone-400/30 pt-4 mt-8 flex items-center justify-between text-xs sm:text-sm font-semibold text-stone-900">
+                      <span>Mulai pesan</span>
+                      <span className="group-hover:translate-x-1.5 transition-transform duration-200">→</span>
+                    </div>
                   </div>
 
-                  {/* Populer Quick Tags */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs pt-1">
-                    <span className="text-stone-400 font-bold shrink-0 text-[11px]">Populer:</span>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('Mie Aruna')}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
-                    >
-                      <span>Mie Aruna Gurih</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('Udang Keju')}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
-                    >
-                      <span>Udang Keju Goreng</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('Es Teh')}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-200 border border-white/15 transition text-[11px] font-bold shrink-0 cursor-pointer"
-                    >
-                      <span>Es Teh Tarik</span>
-                    </button>
+                  {/* Card 02 - Reservasi */}
+                  <div
+                    onClick={() => {
+                      setMainTab('reservation');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="group relative bg-[#ece0cf] hover:bg-[#e6d8c4] rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-xs hover:shadow-md border border-stone-300/40 overflow-hidden min-h-[340px] sm:min-h-[380px]"
+                  >
+                    {/* Background subtle curve */}
+                    <div className="absolute -left-10 -bottom-10 w-44 h-44 rounded-full bg-white/20 pointer-events-none transition-transform group-hover:scale-110 duration-500" />
+
+                    <div>
+                      <span className="text-xs font-mono font-medium text-stone-500 tracking-widest block mb-8">
+                        02
+                      </span>
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-xs text-stone-800 mb-8 group-hover:scale-105 transition-transform">
+                        <CalendarDays className="w-6 h-6 stroke-[1.8]" />
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-bold font-serif text-stone-900 tracking-tight">
+                        Reservasi
+                      </h2>
+                      <p className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed mt-2.5 max-w-[220px]">
+                        Amankan tempat untuk momen spesialmu.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-stone-400/30 pt-4 mt-8 flex items-center justify-between text-xs sm:text-sm font-semibold text-stone-900">
+                      <span>Pilih jadwal</span>
+                      <span className="group-hover:translate-x-1.5 transition-transform duration-200">→</span>
+                    </div>
                   </div>
 
                 </div>
+
               </div>
+
+              {/* Bottom Operational Info Bar - Matching Figma */}
+              <div className="border-t border-stone-300/70 pt-8 mt-12 sm:mt-16">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-12">
+                    {/* Jam Operasional */}
+                    <div className="flex items-start gap-3">
+                      <div className="p-1 text-stone-700">
+                        <Clock className="w-5 h-5 stroke-[1.75]" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                          JAM OPERASIONAL
+                        </span>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-800">
+                          Weekdays 09.00 – 01.00
+                        </p>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-800">
+                          Weekend 09.00 – 02.00
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Lokasi */}
+                    <div className="flex items-start gap-3">
+                      <div className="p-1 text-stone-700">
+                        <MapPin className="w-5 h-5 stroke-[1.75]" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
+                          LOKASI KAMI
+                        </span>
+                        <p className="text-xs sm:text-sm font-semibold text-stone-800">
+                          Jl. Bung Tomo
+                        </p>
+                        <p className="text-xs sm:text-sm text-stone-600">
+                          Samarinda Seberang
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Pill: Buka Sekarang */}
+                  <div className="self-start md:self-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#dce7de] text-[#1e5631] text-xs font-semibold shadow-2xs border border-[#cfe0d2]">
+                      <span className="w-2 h-2 rounded-full bg-[#1e5631]" />
+                      <span>Buka sekarang</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Footer Copyright */}
+                <div className="text-center text-[11px] text-stone-400 pt-8 pb-2">
+                  © 2025 Aruna Cafe • Samarinda, Kalimantan Timur
+                </div>
+              </div>
+
             </div>
           </section>
 
           {/* 3. STICKY CATEGORY NAV & INSTANT SEARCH */}
-          <section className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs">
+          <section id="menu" className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
 
