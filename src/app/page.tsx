@@ -691,6 +691,43 @@ function ArunaPochaStyleContent() {
               </div>
             </Link>
 
+            {/* Desktop Navigation Switcher: Dine In & Reservasi */}
+            <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-stone-200/50 border border-stone-300/60 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setMainTab('order');
+                  setTimeout(() => {
+                    const el = document.getElementById('menu');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }, 50);
+                }}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+                  mainTab === 'order'
+                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Utensils className="w-3.5 h-3.5" />
+                <span>Dine In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMainTab('reservation');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+                  mainTab === 'reservation'
+                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>Reservasi</span>
+              </button>
+            </nav>
+
             {/* Actions: Akses Staf, Table, Cart */}
             <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {/* Instagram link */}
@@ -1331,10 +1368,12 @@ function ArunaPochaStyleContent() {
                   <div
                     onClick={() => {
                       setMainTab('order');
-                      const el = document.getElementById('menu');
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth' });
-                      }
+                      setTimeout(() => {
+                        const el = document.getElementById('menu');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }, 50);
                     }}
                     className="group relative bg-[#dce7de] hover:bg-[#d4e2d7] rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-xs hover:shadow-md border border-stone-300/40 overflow-hidden min-h-[340px] sm:min-h-[380px]"
                   >
@@ -1460,7 +1499,7 @@ function ArunaPochaStyleContent() {
           </section>
 
           {/* 3. STICKY CATEGORY NAV & INSTANT SEARCH */}
-          <section id="menu" className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs">
+          <section id="menu" className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs scroll-mt-18">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
 
