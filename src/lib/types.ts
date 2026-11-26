@@ -47,6 +47,7 @@ export interface MenuItem {
   description: string;
   price: number;
   image_url?: string;
+  badge?: 'BEST SELLER' | 'SIGNATURE' | 'NEW' | string;
   is_available: boolean;
   estimated_time?: string;
   variants?: MenuVariant[];
@@ -95,6 +96,7 @@ export interface OrderItem {
     chosen: VariantOption;
   }[];
   notes?: string;
+  checked?: boolean;
 }
 
 export interface Order {

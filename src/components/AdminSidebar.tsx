@@ -80,47 +80,42 @@ export function AdminSidebar({
     } catch {}
   };
 
+  const isOwner = session?.role === 'owner';
   const navItems = [
     {
-      title: 'Pesanan Hari Ini',
+      title: 'Pesanan & Reservasi',
       shortTitle: 'Pesanan',
       href: '/kasir',
       icon: UtensilsCrossed,
       badge: pendingOrdersCount > 0 ? pendingOrdersCount : null,
-      badgeColor: 'bg-[#c87a58] text-white',
+      badgeColor: 'bg-[#c85a32] text-white',
     },
     {
-      title: 'Daftar Reservasi',
-      shortTitle: 'Reservasi',
-      href: '/kasir/reservasi',
-      icon: CalendarDays,
-      badge: pendingReservationsCount > 0 ? pendingReservationsCount : null,
-      badgeColor: 'bg-amber-400 text-stone-900',
+      title: 'Denah & QR Meja',
+      shortTitle: 'Denah Meja',
+      href: '/kasir/meja',
+      icon: QrCode,
     },
     {
-      title: 'Histori Pembayaran',
-      shortTitle: 'Histori',
-      href: '/kasir/histori',
-      icon: ReceiptText,
-    },
-    {
-      title: 'Stok & Resep (BOM)',
+      title: 'Stok Dessert',
       shortTitle: 'Stok',
       href: '/kasir/stok',
       icon: Layers,
     },
     {
-      title: 'Cetak QR Meja',
-      shortTitle: 'QR Meja',
-      href: '/kasir/meja',
-      icon: QrCode,
+      title: 'Rekap & Tutup Shift',
+      shortTitle: 'Rekap Shift',
+      href: '/kasir/histori',
+      icon: ReceiptText,
     },
-    {
-      title: 'Pengaturan Bayar',
-      shortTitle: 'Bayar',
-      href: '/kasir/pembayaran',
-      icon: CreditCard,
-    },
+    ...(isOwner ? [
+      {
+        title: 'Ringkasan Bisnis (Owner)',
+        shortTitle: 'Owner',
+        href: '/kasir/owner',
+        icon: CreditCard,
+      }
+    ] : [])
   ];
 
   return (
@@ -128,7 +123,7 @@ export function AdminSidebar({
       {/* ======================================================== */}
       {/* 1. TOP BAR UNTUK HP (ANDROID) & TABLET (< lg)             */}
       {/* ======================================================== */}
-      <header className="lg:hidden w-full bg-[#181513] text-stone-100 border-b border-stone-800 px-3.5 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-sm print:hidden">
+      <header className="lg:hidden w-full bg-[#162a1f] text-stone-100 border-b border-stone-800 px-3.5 py-2.5 flex items-center justify-between sticky top-0 z-40 shadow-sm print:hidden">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -184,7 +179,7 @@ export function AdminSidebar({
           onClick={() => setIsMobileOpen(false)}
         >
           <div 
-            className="w-72 max-w-[80vw] h-full bg-[#181513] text-stone-200 flex flex-col justify-between shadow-2xl border-r border-stone-800 animate-in slide-in-from-left duration-200"
+            className="w-72 max-w-[80vw] h-full bg-[#162a1f] text-stone-200 flex flex-col justify-between shadow-2xl border-r border-stone-800 animate-in slide-in-from-left duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col flex-1 overflow-y-auto">
@@ -267,7 +262,7 @@ export function AdminSidebar({
             </div>
 
             {/* Drawer Footer */}
-            <div className="p-4 border-t border-stone-800 bg-[#13110f] text-xs space-y-3 text-stone-400">
+            <div className="p-4 border-t border-stone-800 bg-[#112218] text-xs space-y-3 text-stone-400">
               <div className="flex items-center justify-between">
                 <span>Shift Kasir: Aktif</span>
                 <span className="font-mono text-emerald-400 font-bold">● Online</span>
@@ -301,7 +296,7 @@ export function AdminSidebar({
       {/* 3. DESKTOP & TABLET SIDEBAR (BISA DI-MINIMIZE 100%)       */}
       {/* ======================================================== */}
       <aside 
-        className={`hidden lg:flex flex-col justify-between shrink-0 z-40 bg-[#181513] text-stone-200 border-r border-stone-800 lg:h-screen lg:sticky lg:top-0 transition-all duration-200 print:hidden ${
+        className={`hidden lg:flex flex-col justify-between shrink-0 z-40 bg-[#162a1f] text-stone-200 border-r border-stone-800 lg:h-screen lg:sticky lg:top-0 transition-all duration-200 print:hidden ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -455,7 +450,7 @@ export function AdminSidebar({
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-stone-800 bg-[#13110f] space-y-2 text-xs">
+        <div className="p-3 border-t border-stone-800 bg-[#112218] space-y-2 text-xs">
           {onToggleSound && (
             <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               {!isCollapsed && <span className="text-[11px] text-stone-400">Audio Bel:</span>}

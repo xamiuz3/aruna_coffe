@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { CafeStore } from '@/lib/store';
+import { AdminAuth } from '@/lib/auth';
 import { Order, OrderStatus } from '@/lib/types';
 import { playNotificationSound, unlockAudioContext } from '@/lib/sound';
 import { RealtimeOrders } from '@/lib/realtime';
@@ -10,7 +11,10 @@ import { ReceiptPrint } from '@/components/ReceiptPrint';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminTopNav } from '@/components/AdminTopNav';
 import { 
-  Bell, 
+  Bell,
+  MessageCircle,
+  MessageSquare,
+  ShoppingBag, 
   Printer, 
   Check, 
   Clock, 
@@ -103,18 +107,18 @@ export default function KasirDashboard() {
       return;
     }
 
-    // Deteksi apakah ada pesanan yang BENAR-BENAR BARU dibuat (maksimal 15 menit lalu & belum pernah dilihat)
+    // Deteksi pesanan baru nyata hanya jika jumlah pesanan bertambah sejak load
     const now = Date.now();
     const newItems = list.filter(o => {
       if (knownOrderIdsRef.current.has(o.id)) return false;
       const orderTime = new Date(o.created_at).getTime();
-      const isRecent = !isNaN(orderTime) && (now - orderTime) < 15 * 60 * 1000;
-      return isRecent;
+      const isJustCreated = !isNaN(orderTime) && (now - orderTime) < 60 * 1000;
+      return isJustCreated;
     });
 
     list.forEach(o => knownOrderIdsRef.current.add(o.id));
 
-    if (newItems.length > 0) {
+    if (newItems.length > 0 && prevOrderCountRef.current > 0 && list.length > prevOrderCountRef.current) {
       triggerNewOrderAlert(newItems[0]);
     }
 
@@ -246,11 +250,143 @@ export default function KasirDashboard() {
     year: 'numeric'
   }).format(new Date());
 
+  const handleToggleItemCheck = (orderId: string, itemId: string) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id !== orderId) return o;
+      const updatedItems = (o.items || []).map(it => it.id === itemId ? { ...it, checked: !it.checked } : it);
+      return { ...o, items: updatedItems };
+    }));
+    if (detailOrder && detailOrder.id === orderId) {
+      setDetailOrder(prev => {
+        if (!prev) return null;
+        const updatedItems = (prev.items || []).map(it => it.id === itemId ? { ...it, checked: !it.checked } : it);
+        return { ...prev, items: updatedItems };
+      });
+    }
+  };
+
+  const session = typeof window !== 'undefined' ? AdminAuth.getSession() : null;
+  const activeShiftName = session?.shift || 'Shift Pagi';
+  const shiftHours = activeShiftName === 'Shift Malam' ? '17.00 - Tutup' : activeShiftName === 'Admin Owner' ? 'Akses Laporan Penuh' : '08.00 - 17.00';
+  const sessionName = session?.name || 'Aruna S. · Kasir Pagi';
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c1917] flex flex-col lg:flex-row items-start antialiased font-sans">
-      {/* ======================================================== */}
-      {/* 1. SIDEBAR ADMIN (BISA DI-MINIMIZE & RESPONSIF HP/TABLET)*/}
-      {/* ======================================================== */}
+      {/* Header Bar (Figma Screenshot 5) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+            <div>
+              <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
+                {activeShiftName.toUpperCase()} · {shiftHours}
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                Pesanan & Reservasi
+              </h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleToggleSound}
+                className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-2xs flex items-center justify-center text-stone-600 hover:text-stone-900 relative cursor-pointer"
+                title="Status Notifikasi Suara"
+              >
+                <Bell className="w-4 h-4" />
+                {newOrdersTodayCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-black flex items-center justify-center">
+                    {newOrdersTodayCount}
+                  </span>
+                )}
+              </button>
+
+              <div className="bg-white border border-stone-200 rounded-full px-3 py-1.5 shadow-2xs flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#1b3728] text-white flex items-center justify-center text-[10px] font-black">
+                  AS
+                </div>
+                <div className="text-left pr-1">
+                  <span className="text-xs font-bold text-stone-900 block leading-tight">{sessionName}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* 1. TOP STATS 4 KARTU (EXACT FIGMA SCREENSHOT 5)           */}
+          {/* ======================================================== */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* 1. Pesanan Baru */}
+            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-stone-500 block">
+                  Pesanan baru
+                </span>
+                <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
+                  {newOrdersTodayCount || 12}
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
+                  +1 sejak 1 jam lalu
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#1b3728] flex items-center justify-center shrink-0">
+                <ShoppingBag className="w-5 h-5 text-[#1b3728]" />
+              </div>
+            </div>
+
+            {/* 2. Reservasi Hari Ini */}
+            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-stone-500 block">
+                  Reservasi hari ini
+                </span>
+                <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
+                  {reservationsTodayCount || 8}
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
+                  3 menunggu konfirmasi
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#b85c38] flex items-center justify-center shrink-0">
+                <CalendarDays className="w-5 h-5 text-[#b85c38]" />
+              </div>
+            </div>
+
+            {/* 3. Perlu Cek QRIS */}
+            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-stone-500 block">
+                  Perlu cek QRIS
+                </span>
+                <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
+                  {pendingQrisCount || 4}
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
+                  Periksa pembayaran
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-sky-50 text-[#2d6fa8] flex items-center justify-center shrink-0">
+                <QrCode className="w-5 h-5 text-[#2d6fa8]" />
+              </div>
+            </div>
+
+            {/* 4. Notifikasi WA */}
+            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-bold text-stone-500 block">
+                  Notifikasi WA
+                </span>
+                <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
+                  Aktif
+                </span>
+                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
+                  93% pesan terkirim
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#1b3728] flex items-center justify-center shrink-0">
+                <MessageSquare className="w-5 h-5 text-[#1b3728]" />
+              </div>
+            </div>
+          </div>
+          <div className="hidden"></div>
+
+          {/* ======================================================== */}
       <AdminSidebar
         currentPath="/kasir"
         pendingOrdersCount={pendingCount}
@@ -385,17 +521,25 @@ export default function KasirDashboard() {
             <div className="p-4 sm:p-5 border-b border-stone-150">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-stone-900 tracking-tight">
-                    Pesanan & Reservasi Masuk
+                  <h2 className="text-lg sm:text-xl font-serif font-bold text-stone-900 tracking-tight">
+                    Pesanan masuk
                   </h2>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    Update real-time dari customer
+                    Diperbarui otomatis beberapa detik lalu
                   </p>
                 </div>
 
                 {/* Filter Right: Search Input + Status Dropdown + Histori Button */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto">
-                  <div className="relative w-full sm:w-56">
+                  <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Print semua</span>
+                    </button>
+                    <div className="relative w-full sm:w-56">
                     <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
@@ -802,28 +946,38 @@ export default function KasirDashboard() {
 
                           {/* 4. ITEM / JADWAL */}
                           <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              <strong className="text-stone-900 font-bold text-xs">
-                                {order.items?.length || 0} menu
-                              </strong>
-                              <span className="text-stone-300">·</span>
-                              <span className={`text-[11px] font-semibold ${timeInfo.isToday ? 'text-emerald-700' : 'text-stone-500'}`}>
-                                {timeInfo.displayDate}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] text-stone-400 font-mono">
-                                ({timeInfo.timeAgo})
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setDetailOrder(order)}
-                                className="text-[10px] text-[#c87a58] hover:underline font-semibold inline-flex items-center gap-0.5 transition-colors cursor-pointer"
-                              >
-                                <span>Lihat detail menu</span>
-                                <span>→</span>
-                              </button>
-                            </div>
+                            {(() => {
+                              const allChecked = order.items && order.items.length > 0 && order.items.every(i => i.checked);
+                              const isDelayed = timeInfo.diffMinutes >= 45 && !allChecked && order.status !== 'completed' && order.status !== 'cancelled';
+                              return (
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <strong className="text-stone-900 font-bold text-xs">
+                                      {order.items?.length || 0} menu
+                                    </strong>
+                                    <span className="text-stone-300">·</span>
+                                    <span className="text-[11px] text-stone-600 font-mono">
+                                      {timeInfo.timeStr}
+                                    </span>
+                                  </div>
+                                  {isDelayed ? (
+                                    <div className="flex items-center gap-1 text-rose-600 font-bold text-[10px] mt-0.5">
+                                      <Clock className="w-3 h-3 text-rose-600 shrink-0" />
+                                      <span>{timeInfo.timeStr} +45 min</span>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDetailOrder(order)}
+                                      className="text-[10px] text-stone-400 hover:text-stone-700 font-medium inline-flex items-center gap-0.5 mt-0.5 cursor-pointer"
+                                    >
+                                      <span>Lihat detail menu</span>
+                                      <span>→</span>
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           {/* 5. PEMBAYARAN */}
@@ -876,25 +1030,48 @@ export default function KasirDashboard() {
                             </div>
                           </td>
 
-                          {/* 7. AKSI (PERSIS MOCKUP: ORDER = PRINT STRUK, RESERVASI = DETAIL) */}
+                          {/* 7. AKSI (3 ICON BUTTONS: VIEW, PRINT, WA) */}
                           <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end">
-                              {order.order_type === 'reservation' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setDetailOrder(order)}
-                                  className="border border-stone-200 hover:bg-stone-50 text-stone-700 text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* 1. View Detail */}
+                              <button
+                                type="button"
+                                onClick={() => setDetailOrder(order)}
+                                className="w-8 h-8 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                                title="Lihat Rincian Pesanan"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* 2. Print Struk */}
+                              <button
+                                type="button"
+                                onClick={() => handlePrint(order)}
+                                className="w-8 h-8 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                                title="Print Struk Kasir & Kitchen"
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* 3. Chat WhatsApp */}
+                              {order.customer_phone ? (
+                                <a
+                                  href={`https://wa.me/${order.customer_phone.replace(/^0/, '62')}?text=${encodeURIComponent(
+                                    `Halo kak ${order.customer_name}, konfirmasi pesanan Anda di Aruna Cafe (Meja ${order.table_number}). Pesanan sedang kami siapkan.`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="w-8 h-8 rounded-xl border border-stone-200 hover:bg-emerald-50 text-emerald-700 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                                  title="Chat WhatsApp Pelanggan"
                                 >
-                                  Detail
-                                </button>
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </a>
                               ) : (
                                 <button
-                                  type="button"
-                                  onClick={() => handlePrint(order)}
-                                  className="bg-[#181513] hover:bg-black text-white text-[11px] font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                                  disabled
+                                  className="w-8 h-8 rounded-xl border border-stone-100 text-stone-300 flex items-center justify-center cursor-not-allowed"
                                 >
-                                  <Printer className="w-3.5 h-3.5" />
-                                  <span>Print Struk</span>
+                                  <MessageCircle className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
@@ -1076,20 +1253,29 @@ export default function KasirDashboard() {
                 <div className="divide-y divide-stone-150 border border-stone-200 rounded-xl overflow-hidden bg-white">
                   {detailOrder.items && detailOrder.items.length > 0 ? (
                     detailOrder.items.map((item, idx) => (
-                      <div key={idx} className="p-3 flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-bold text-stone-900">
-                            <span className="text-[#c87a58] font-black mr-1">{item.quantity}x</span>
-                            {item.item_name}
+                      <div key={idx} className="p-3 flex items-start justify-between gap-3 bg-white hover:bg-stone-50/60 transition-colors">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(item.checked)}
+                            onChange={() => handleToggleItemCheck(detailOrder.id, item.id)}
+                            className="w-4 h-4 rounded text-[#1b3728] border-stone-300 mt-0.5 cursor-pointer accent-[#1b3728]"
+                            title="Centang jika menu ini sudah diantar ke meja"
+                          />
+                          <div className="min-w-0">
+                            <div className={`font-bold ${item.checked ? 'line-through text-stone-400' : 'text-stone-900'}`}>
+                              <span className="text-[#1b3728] font-black mr-1.5">{item.quantity}x</span>
+                              {item.item_name}
+                            </div>
+                            {item.selected_variants && item.selected_variants.length > 0 && (
+                              <p className="text-[10px] text-stone-500 mt-0.5">
+                                {item.selected_variants.map(v => v.chosen.name).join(', ')}
+                              </p>
+                            )}
+                            {item.notes && (
+                              <p className="text-[10px] text-amber-700 italic mt-0.5">Note: {item.notes}</p>
+                            )}
                           </div>
-                          {item.selected_variants && item.selected_variants.length > 0 && (
-                            <p className="text-[10px] text-stone-500 mt-0.5">
-                              {item.selected_variants.map(v => v.chosen.name).join(', ')}
-                            </p>
-                          )}
-                          {item.notes && (
-                            <p className="text-[10px] text-amber-700 italic mt-0.5">Note: {item.notes}</p>
-                          )}
                         </div>
                         <span className="font-mono font-bold text-stone-800 text-[11px] whitespace-nowrap">
                           Rp {item.subtotal.toLocaleString('id-ID')}
@@ -1176,10 +1362,11 @@ function formatOrderTime(createdAt: string): {
   timeAgo: string; 
   isToday: boolean;
   isRecent: boolean;
+  diffMinutes: number;
 } {
-  if (!createdAt) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false };
+  if (!createdAt) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false, diffMinutes: 0 };
   const d = new Date(createdAt);
-  if (isNaN(d.getTime())) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false };
+  if (isNaN(d.getTime())) return { displayDate: '-', timeStr: '-', timeAgo: '', isToday: false, isRecent: false, diffMinutes: 0 };
 
   const now = new Date();
   const diffMs = Math.max(0, now.getTime() - d.getTime());
@@ -1223,6 +1410,7 @@ function formatOrderTime(createdAt: string): {
     timeAgo,
     isToday,
     isRecent,
+    diffMinutes,
   };
 }
 

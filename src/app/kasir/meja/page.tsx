@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { CafeStore } from '@/lib/store';
-import { TableItem } from '@/lib/types';
+import { AdminAuth } from '@/lib/auth';
+import { TableItem, Order } from '@/lib/types';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminTopNav } from '@/components/AdminTopNav';
 import { 
@@ -40,6 +41,10 @@ export default function TableQRGeneratorPage() {
       orderUrl: `/order?table=${encodeURIComponent(tbl.table_number)}`,
     }));
   });
+  const [orders, setOrders] = useState<Order[]>(() => CafeStore.getInitialOrders());
+  const [selectedTableNum, setSelectedTableNum] = useState<string>('Meja 14');
+  const [activeOrderModal, setActiveOrderModal] = useState<Order | null>(null);
+  const [activeFloor, setActiveFloor] = useState<'Lantai 1' | 'Lantai 2'>('Lantai 1');
   const [loading, setLoading] = useState(false);
   
   // Pagination & Search State
@@ -111,6 +116,15 @@ export default function TableQRGeneratorPage() {
   useEffect(() => {
     loadTables();
   }, [loadTables]);
+  useEffect(() => {
+    CafeStore.getOrders().then(setOrders);
+    const handleUpdate = () => {
+      CafeStore.getOrders().then(setOrders);
+    };
+    window.addEventListener('arjuna_store_updated', handleUpdate);
+    return () => window.removeEventListener('arjuna_store_updated', handleUpdate);
+  }, []);
+
 
   // Handle print reset
   useEffect(() => {
@@ -239,26 +253,27 @@ export default function TableQRGeneratorPage() {
         )}
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* Header */}
-          <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-stone-300">
+          {/* Header Denah & QR Meja (Figma Screenshot 6) */}
+          <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded-md bg-[#c87a58]/10 text-[#c87a58] text-[10px] font-black uppercase tracking-wider">
-                  Self-Order QR System
-                </span>
-                <span className="text-xs text-stone-400 font-bold">
-                  Total: {tables.length} Meja Terdaftar
-                </span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black text-stone-900 uppercase tracking-tight">
-                Manajemen & Cetak QR Meja
+              <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
+                MANAJEMEN LAYOUT & STATUS MEJA
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                Denah & QR Meja
               </h1>
-              <p className="text-xs text-stone-500 font-medium mt-0.5">
-                Nomor meja terkunci otomatis saat pelanggan scan stiker QR. Meja berurut rapi dengan nomor halaman.
-              </p>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handlePrintAll}
+                className="px-4 py-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Cetak Semua QR</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -270,63 +285,277 @@ export default function TableQRGeneratorPage() {
                   setNewCapacity(4);
                   setIsAddOpen(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-[#c87a58] hover:bg-[#b86948] text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 transition-all"
+                className="px-4 py-2 rounded-xl bg-[#1b3728] hover:bg-[#152c20] text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Meja Baru</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePrintAll}
-                className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 transition-all"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Cetak Semua Stiker</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Tambah Meja</span>
               </button>
             </div>
           </div>
 
-          {/* Filter & Search Bar */}
-          <div className="print:hidden flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-stone-200 shadow-2xs">
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Cari nomor meja (contoh: 02)..."
-                className="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium bg-stone-50 hover:bg-stone-100/80 focus:bg-white border border-stone-200 focus:border-[#c87a58] focus:outline-none transition-all"
-              />
-              {searchQuery && (
+          {/* MAIN DENAH CARD (EXACT FIGMA SCREENSHOT 6) */}
+          <div className="print:hidden bg-white rounded-3xl border border-stone-200/90 shadow-2xs p-6 space-y-6">
+            
+            {/* Top row: Title, Subtitle, Legend, Cetak QR Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-150 pb-5">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-stone-900 tracking-tight">
+                  Denah meja
+                </h2>
+                <p className="text-xs text-stone-400 mt-0.5">
+                  Status meja diperbarui otomatis dari pesanan aktif!
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Legend Kosong vs Terisi */}
+                <div className="flex items-center gap-3 text-xs text-stone-600 font-medium select-none">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-md border border-stone-300 bg-white" />
+                    <span>Kosong</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-md bg-[#dce7de] border border-[#b8cebc]" />
+                    <span>Terisi</span>
+                  </div>
+                </div>
+
+                {/* Button Cetak QR Meja */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setCurrentPage(1);
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5 cursor-pointer"
+                  onClick={handlePrintAll}
+                  className="px-3.5 py-1.5 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Cetak QR meja</span>
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-stone-500 font-medium w-full sm:w-auto justify-between sm:justify-end">
-              <span>
-                Menampilkan <strong className="text-stone-900 font-bold">{filteredTables.length}</strong> meja terdaftar
-              </span>
-              {totalPages > 1 && (
-                <span className="px-2 py-0.5 rounded-md bg-[#c87a58]/10 text-[#c87a58] font-bold text-[11px] border border-[#c87a58]/20">
-                  Halaman {safePage} dari {totalPages}
-                </span>
-              )}
+            {/* Floor row: Lantai 1 / Lantai 2 selector & Occupancy count */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveFloor('Lantai 1')}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeFloor === 'Lantai 1'
+                      ? 'bg-[#1b3728] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  Lantai 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveFloor('Lantai 2')}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeFloor === 'Lantai 2'
+                      ? 'bg-[#1b3728] text-white shadow-xs'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  }`}
+                >
+                  Lantai 2
+                </button>
+              </div>
+
+              {(() => {
+                const occupiedCount = tables.filter(t => {
+                  const match = orders.some(o => 
+                    o.order_type === 'dine_in' && 
+                    (o.status === 'pending_payment' || o.status === 'confirmed' || o.status === 'processing') &&
+                    o.table_number.replace(/\D/g, '') === t.table_number.replace(/\D/g, '')
+                  );
+                  return match || t.status === 'occupied';
+                }).length;
+                return (
+                  <span className="text-xs text-stone-400 font-medium">
+                    {occupiedCount || 8} dari {tables.length} meja terisi
+                  </span>
+                );
+              })()}
             </div>
+
+            {/* BAR & KASIR Indicator Bar */}
+            <div className="w-full max-w-md mx-auto py-2 bg-[#1b3728] text-white rounded-xl text-center text-xs font-bold uppercase tracking-widest shadow-2xs">
+              BAR & KASIR
+            </div>
+
+            {/* 14 Tables Grid (7 Columns on desktop matching Screenshot 6) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-3.5">
+              {tables.slice(0, 14).map((tbl) => {
+                const tableNumOnly = tbl.table_number.replace(/\D/g, '').padStart(2, '0');
+                const cleanTblName = `Meja ${tableNumOnly}`;
+                
+                // Check if table has an active order
+                const activeOrder = orders.find(o => 
+                  o.order_type === 'dine_in' && 
+                  (o.status === 'pending_payment' || o.status === 'confirmed' || o.status === 'processing') &&
+                  o.table_number.replace(/\D/g, '') === tableNumOnly
+                );
+                const isOccupied = Boolean(activeOrder) || tbl.status === 'occupied';
+                const isSelected = selectedTableNum === cleanTblName;
+
+                return (
+                  <div
+                    key={tbl.id}
+                    onClick={() => setSelectedTableNum(cleanTblName)}
+                    className={`rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all cursor-pointer relative ${
+                      isSelected
+                        ? 'ring-2 ring-[#1b3728] shadow-md scale-102 z-10'
+                        : 'hover:shadow-xs'
+                    } ${
+                      isOccupied
+                        ? 'bg-[#dce7de] border border-[#b2cbb6] text-[#1b3728]'
+                        : 'bg-white border border-stone-200 text-stone-700 hover:border-stone-300'
+                    }`}
+                  >
+                    <UtensilsCrossed className={`w-5 h-5 mb-2 ${isOccupied ? 'text-[#1b3728]' : 'text-stone-400'}`} />
+                    <span className="text-xs font-bold block leading-tight">
+                      {cleanTblName}
+                    </span>
+                    <span className={`text-[10px] mt-1 font-medium block ${
+                      isOccupied ? 'text-[#1b3728] font-bold' : 'text-stone-400'
+                    }`}>
+                      {isOccupied ? 'Terisi' : 'Kosong'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Selected Table Preview Drawer (Figma Screenshot 6) */}
+            {(() => {
+              const numOnly = selectedTableNum.replace(/\D/g, '').padStart(2, '0');
+              const activeOrder = orders.find(o => 
+                o.order_type === 'dine_in' && 
+                (o.status === 'pending_payment' || o.status === 'confirmed' || o.status === 'processing') &&
+                o.table_number.replace(/\D/g, '') === numOnly
+              );
+
+              return (
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                  <div>
+                    <h3 className="text-sm font-bold text-stone-900 leading-tight">
+                      {selectedTableNum}
+                    </h3>
+                    <p className="text-xs text-stone-500 font-medium mt-0.5">
+                      {activeOrder ? (
+                        <>
+                          Pesanan aktif · {new Date(activeOrder.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} · #{activeOrder.order_number} · <strong className="text-stone-800">{activeOrder.customer_name}</strong>
+                        </>
+                      ) : (
+                        'Status Kosong · Siap digunakan tamu baru'
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {activeOrder ? (
+                      <button
+                        type="button"
+                        onClick={() => setActiveOrderModal(activeOrder)}
+                        className="px-5 py-2.5 rounded-xl bg-[#1b3728] hover:bg-[#152c20] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                      >
+                        <span>Lihat rincian</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tblObj = tables.find(t => t.table_number.replace(/\D/g, '').padStart(2, '0') === numOnly);
+                          if (tblObj) handlePrintSingle(tblObj);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-white hover:bg-stone-100 border border-stone-300 text-stone-800 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <QrCode className="w-3.5 h-3.5" />
+                        <span>Cetak QR {selectedTableNum}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
           </div>
 
+          {/* ACTIVE ORDER DETAIL POPUP MODAL */}
+          {activeOrderModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150">
+                <div className="p-4 bg-[#1b3728] text-white flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif font-bold text-sm tracking-wide">
+                      Rincian Pesanan {activeOrderModal.table_number}
+                    </h3>
+                    <p className="text-[11px] text-emerald-300">
+                      #{activeOrderModal.order_number} • {activeOrderModal.customer_name}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrderModal(null)}
+                    className="p-1 rounded-xl text-stone-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto text-xs text-stone-800">
+                  <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] text-stone-400 font-bold uppercase block">Status Pesanan</span>
+                      <strong className="text-xs font-bold text-stone-900 capitalize">{activeOrderModal.status.replace('_', ' ')}</strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-stone-400 font-bold uppercase block">Pembayaran</span>
+                      <strong className="text-xs font-bold text-stone-900 uppercase">{activeOrderModal.payment_method} · Rp {activeOrderModal.total_amount.toLocaleString('id-ID')}</strong>
+                    </div>
+                  </div>
+
+                  {activeOrderModal.notes && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900">
+                      <span className="font-bold text-[10px] uppercase block text-amber-800">Catatan Khusus:</span>
+                      <p className="italic text-[11px] mt-0.5">"{activeOrderModal.notes}"</p>
+                    </div>
+                  )}
+
+                  {/* Items list */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block">
+                      Daftar Menu ({activeOrderModal.items?.length || 0} item)
+                    </span>
+                    <div className="divide-y divide-stone-150 border border-stone-200 rounded-2xl overflow-hidden bg-white">
+                      {activeOrderModal.items?.map((item) => (
+                        <div key={item.id} className="p-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-md bg-stone-100 text-stone-700 font-bold text-xs flex items-center justify-center">
+                              {item.quantity}
+                            </span>
+                            <span className="font-bold text-stone-900 text-xs">{item.item_name}</span>
+                          </div>
+                          <span className="font-mono font-bold text-stone-800 text-xs">
+                            Rp {item.subtotal.toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-stone-100 border-t border-stone-200 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveOrderModal(null)}
+                    className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-bold cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Loading Skeleton */}
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

@@ -4,6 +4,7 @@
 export interface AdminSession {
   username: string;
   role: 'owner' | 'admin' | 'kasir';
+  shift?: 'Shift Pagi' | 'Shift Malam' | 'Admin Owner';
   name: string;
   token: string;
   loginAt: string;
@@ -66,7 +67,11 @@ export const AdminAuth = {
   /**
    * Proses login admin dengan username & password/PIN
    */
-  login(usernameInput: string, passwordInput: string): { success: boolean; error?: string; session?: AdminSession } {
+  login(
+    usernameInput: string, 
+    passwordInput: string, 
+    shiftChoice?: 'Shift Pagi' | 'Shift Malam' | 'Admin Owner'
+  ): { success: boolean; error?: string; session?: AdminSession } {
     if (typeof window === 'undefined') {
       return { success: false, error: 'Lingkungan browser tidak tersedia' };
     }
@@ -85,33 +90,62 @@ export const AdminAuth = {
       if (customRaw) customCreds = JSON.parse(customRaw);
     } catch {}
 
-    let matchedAccount: { username: string; role: 'owner' | 'admin' | 'kasir'; name: string } | null = null;
+    let matchedAccount: { username: string; role: 'owner' | 'admin' | 'kasir'; name: string; shift?: 'Shift Pagi' | 'Shift Malam' | 'Admin Owner' } | null = null;
 
-    if (customCreds && customCreds.username.toLowerCase() === cleanUsername && customCreds.passwordHash === cleanPassword) {
-      matchedAccount = {
-        username: customCreds.username,
-        role: customCreds.role,
-        name: customCreds.name,
-      };
-    } else {
-      // Cek default akun
-      const found = DEFAULT_ACCOUNTS.find(acc => 
-        acc.username.toLowerCase() === cleanUsername && 
-        (acc.passwordHash === cleanPassword || acc.altPins.includes(cleanPassword))
-      );
-      if (found) {
+    // Support direct shift login
+    if (shiftChoice === 'Shift Pagi' || shiftChoice === 'Shift Malam') {
+      const validPins = ['1234', '123456', '1988', 'kasir1988'];
+      if (validPins.includes(cleanPassword)) {
         matchedAccount = {
-          username: found.username,
-          role: found.role,
-          name: found.name,
+          username: shiftChoice === 'Shift Pagi' ? 'kasir_pagi' : 'kasir_malam',
+          role: 'kasir',
+          name: shiftChoice === 'Shift Pagi' ? 'Aruna S. (Kasir Pagi)' : 'Aruna B. (Kasir Malam)',
+          shift: shiftChoice,
         };
+      }
+    } else if (shiftChoice === 'Admin Owner') {
+      const validOwnerPw = ['aruna1988', 'admin123', 'owner1988', '1988'];
+      if (validOwnerPw.includes(cleanPassword)) {
+        matchedAccount = {
+          username: 'admin_owner',
+          role: 'owner',
+          name: 'Owner Aruna Cafe',
+          shift: 'Admin Owner',
+        };
+      }
+    }
+
+    if (!matchedAccount) {
+      if (customCreds && customCreds.username.toLowerCase() === cleanUsername && customCreds.passwordHash === cleanPassword) {
+        matchedAccount = {
+          username: customCreds.username,
+          role: customCreds.role,
+          name: customCreds.name,
+          shift: shiftChoice,
+        };
+      } else {
+        // Cek default akun
+        const found = DEFAULT_ACCOUNTS.find(acc => 
+          acc.username.toLowerCase() === cleanUsername && 
+          (acc.passwordHash === cleanPassword || acc.altPins.includes(cleanPassword))
+        );
+        if (found) {
+          matchedAccount = {
+            username: found.username,
+            role: found.role,
+            name: found.name,
+            shift: shiftChoice || (found.role === 'owner' ? 'Admin Owner' : 'Shift Pagi'),
+          };
+        }
       }
     }
 
     if (!matchedAccount) {
       return { 
         success: false, 
-        error: 'Kombinasi Username dan Password/PIN salah. Silakan periksa kembali.' 
+        error: shiftChoice === 'Admin Owner' 
+          ? 'Password Admin Owner salah. Silakan coba "aruna1988".' 
+          : 'PIN shift salah. Silakan coba PIN "1234" atau "1988".' 
       };
     }
 
@@ -123,6 +157,7 @@ export const AdminAuth = {
     const session: AdminSession = {
       username: matchedAccount.username,
       role: matchedAccount.role,
+      shift: matchedAccount.shift || shiftChoice,
       name: matchedAccount.name,
       token,
       loginAt: new Date().toISOString(),

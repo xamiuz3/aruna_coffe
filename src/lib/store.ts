@@ -592,7 +592,8 @@ export const CafeStore = {
   }): Promise<Order> {
     const orderNumber = `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
     const subtotal = params.cart.reduce((acc, item) => acc + item.subtotal, 0);
-    const totalAmount = subtotal;
+    const tax = Math.round(subtotal * 0.1);
+    const totalAmount = Math.ceil((subtotal + tax) / 1000) * 1000;
 
     const initialStatus: OrderStatus = params.payment_method === 'qris'
       ? 'pending_payment'
