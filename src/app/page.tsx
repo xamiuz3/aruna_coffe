@@ -54,11 +54,18 @@ function ArunaPochaStyleContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const hasTableParam = !!searchParams.get('table');
   const tableQuery = searchParams.get('table') || 'Meja 01';
-  const initialTabQuery = searchParams.get('tab') === 'reservation' ? 'reservation' : 'order';
+  const initialTabQuery = searchParams.get('tab');
 
-  // Navigation mode: 'order' (pesan di meja) | 'reservation' (reservasi meja)
-  const [mainTab, setMainTab] = useState<'order' | 'reservation'>(initialTabQuery);
+  const getInitialMode = (): 'home' | 'order' | 'reservation' => {
+    if (initialTabQuery === 'reservation') return 'reservation';
+    if (hasTableParam || initialTabQuery === 'order') return 'order';
+    return 'home';
+  };
+
+  // Navigation mode: 'home' (landing page) | 'order' (pesan di meja) | 'reservation' (reservasi meja)
+  const [mainTab, setMainTab] = useState<'home' | 'order' | 'reservation'>(getInitialMode);
 
   const [categories, setCategories] = useState<MenuCategory[]>(() => CafeStore.getInitialCategories());
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => CafeStore.getInitialMenuItems());
@@ -691,16 +698,28 @@ function ArunaPochaStyleContent() {
               </div>
             </Link>
 
-            {/* Desktop Navigation Switcher: Dine In & Reservasi */}
+            {/* Desktop Navigation Switcher: Beranda, Dine In & Reservasi */}
             <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-full bg-stone-200/50 border border-stone-300/60 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => {
+                  setMainTab('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+                  mainTab === 'home'
+                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Beranda</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setMainTab('order');
-                  setTimeout(() => {
-                    const el = document.getElementById('menu');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }, 50);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
                   mainTab === 'order'
@@ -816,11 +835,11 @@ function ArunaPochaStyleContent() {
           {/* Back link */}
           <button
             type="button"
-            onClick={() => setMainTab('order')}
+            onClick={() => setMainTab('home')}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-xs font-bold text-stone-700 border border-stone-200 shadow-2xs transition-all cursor-pointer group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-[#c87a58]" />
-            <span>Kembali ke Menu Dine-In ({currentTable})</span>
+            <span>Kembali ke Beranda</span>
           </button>
 
           {/* Heading */}
@@ -1325,19 +1344,19 @@ function ArunaPochaStyleContent() {
             </div>
           </div>
         </main>
-      ) : (
+      ) : mainTab === 'home' ? (
         /* ======================================================== */
-        /* REGULAR ORDER DINE-IN VIEW                               */
+        /* 2. HOME LANDING VIEW (FIGMA DESIGN - MENU TERSEMBUNYI)   */
         /* ======================================================== */
-        <>
+        <main className="flex-1 flex flex-col justify-center">
           {/* 2. HERO BANNER - EXACT FIGMA DESIGN */}
-          <section className="relative w-full bg-[#faf8f5] text-stone-900 overflow-hidden border-b border-stone-200/80">
+          <section className="relative w-full bg-[#faf8f5] text-stone-900 overflow-hidden">
             {/* Concentric Decorative Rings on the Left (Figma) */}
             <div className="absolute -left-56 sm:-left-44 top-1/2 -translate-y-1/2 w-[460px] h-[460px] sm:w-[600px] sm:h-[600px] rounded-full border border-stone-300/50 pointer-events-none" />
             <div className="absolute -left-40 sm:-left-28 top-1/2 -translate-y-1/2 w-[340px] h-[340px] sm:w-[460px] sm:h-[460px] rounded-full border border-stone-300/50 pointer-events-none" />
             <div className="absolute -left-24 sm:-left-14 top-1/2 -translate-y-1/2 w-[220px] h-[220px] sm:w-[320px] sm:h-[320px] rounded-full border border-stone-300/50 pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12 sm:pt-16 pb-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12 sm:pt-16 pb-12">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
                 
                 {/* Left Column: Heading & Description */}
@@ -1368,12 +1387,7 @@ function ArunaPochaStyleContent() {
                   <div
                     onClick={() => {
                       setMainTab('order');
-                      setTimeout(() => {
-                        const el = document.getElementById('menu');
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }, 50);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="group relative bg-[#dce7de] hover:bg-[#d4e2d7] rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 cursor-pointer shadow-xs hover:shadow-md border border-stone-300/40 overflow-hidden min-h-[340px] sm:min-h-[380px]"
                   >
@@ -1497,6 +1511,46 @@ function ArunaPochaStyleContent() {
 
             </div>
           </section>
+        </main>
+      ) : (
+        /* ======================================================== */
+        /* 3. DINE-IN MENU ORDER VIEW (HANYA MUNCUL DI DINE IN / QR)*/
+        /* ======================================================== */
+        <main className="flex-1 flex flex-col">
+          {/* Header Bar Khusus Dine-In */}
+          <div className="bg-[#FAF8F5] border-b border-stone-200/80 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+            <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMainTab('home');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-xs font-semibold text-stone-700 border border-stone-200 shadow-2xs transition-all cursor-pointer group"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform text-stone-500" />
+                  <span>Beranda</span>
+                </button>
+                <div className="h-4 w-px bg-stone-300" />
+                <div>
+                  <h1 className="text-base sm:text-lg font-bold font-serif text-stone-900 leading-tight">
+                    Menu Dine-In
+                  </h1>
+                  <p className="text-[11px] text-stone-500 font-medium">
+                    Pilih menu makanan & minuman langsung untuk {currentTable}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="bg-stone-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 select-none">
+                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{currentTable}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* 3. STICKY CATEGORY NAV & INSTANT SEARCH */}
           <section id="menu" className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs scroll-mt-18">
@@ -1799,7 +1853,7 @@ function ArunaPochaStyleContent() {
               </>
             )}
           </section>
-        </>
+        </main>
       )}
 
       {/* ======================================================== */}
@@ -2642,38 +2696,59 @@ function ArunaPochaStyleContent() {
       <nav className="block md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-3 py-2">
         <div className="max-w-md mx-auto grid grid-cols-4 items-center">
 
-          {/* 1. Tab Menu */}
+          {/* 1. Tab Beranda */}
+          <button
+            type="button"
+            onClick={() => {
+              setMainTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              mainTab === 'home' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'home' ? 'bg-stone-100 text-stone-900' : ''}`}>
+              <Home className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">
+              Beranda
+            </span>
+          </button>
+
+          {/* 2. Tab Dine In */}
           <button
             type="button"
             onClick={() => {
               setMainTab('order');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'order' ? 'text-[#c87a58]' : 'text-stone-400 hover:text-stone-700'
-              }`}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              mainTab === 'order' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+            }`}
           >
-            <div className={`p-1 rounded-xl transition-all ${mainTab === 'order' ? 'bg-[#c87a58]/10' : ''}`}>
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'order' ? 'bg-stone-100 text-stone-900' : ''}`}>
               <Utensils className="w-5 h-5" />
             </div>
-            <span className={`text-[10px] tracking-tight ${mainTab === 'order' ? 'font-black' : 'font-medium'}`}>
-              Menu
+            <span className="text-[10px] tracking-tight">
+              Dine In
             </span>
           </button>
 
-          {/* 2. Tab Reservasi */}
+          {/* 3. Tab Reservasi */}
           <button
             type="button"
             onClick={() => {
               setMainTab('reservation');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'reservation' ? 'text-[#c87a58]' : 'text-stone-400 hover:text-stone-700'
-              }`}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              mainTab === 'reservation' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+            }`}
           >
-            <div className={`p-1 rounded-xl transition-all ${mainTab === 'reservation' ? 'bg-[#c87a58]/10' : ''}`}>
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'reservation' ? 'bg-stone-100 text-stone-900' : ''}`}>
               <CalendarDays className="w-5 h-5" />
             </div>
-            <span className={`text-[10px] tracking-tight ${mainTab === 'reservation' ? 'font-black' : 'font-medium'}`}>
+            <span className="text-[10px] tracking-tight">
               Reservasi
             </span>
           </button>
