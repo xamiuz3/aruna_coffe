@@ -26,25 +26,15 @@ body {
   scrollbar-width: none;
 }
 
-/* THERMAL RECEIPT PRINT OPTIMIZATION (iware 58mm / 80mm) */
+/* PRINT OPTIMIZATION (Thermal 58mm/80mm & A4 QR Meja / Laporan) */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-receipt-container,
-  #print-receipt-container * {
-    visibility: visible;
-  }
-  #print-receipt-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   @page {
-    size: 58mm auto;
-    margin: 0;
+    margin: 8mm;
   }
 }

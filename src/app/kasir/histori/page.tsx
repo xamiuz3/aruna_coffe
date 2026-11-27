@@ -410,7 +410,7 @@ export default function HistoriPembayaranPage() {
       <AdminSidebar currentPath="/kasir/histori" />
 
       {/* 2. MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 flex flex-col min-w-0 w-full ${printingOrder ? 'print:hidden' : ''}`}>
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* Header (Figma / Canva Screenshot 7) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">

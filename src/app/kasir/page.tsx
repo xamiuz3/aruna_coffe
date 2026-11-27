@@ -189,6 +189,11 @@ export default function KasirDashboard() {
 
   const handlePrint = (order: Order) => {
     setPrintingOrder(order);
+    const cleanup = () => {
+      setPrintingOrder(null);
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     setTimeout(() => {
       window.print();
     }, 150);
@@ -306,7 +311,7 @@ export default function KasirDashboard() {
       {/* ======================================================== */}
       {/* MAIN CONTENT AREA                                        */}
       {/* ======================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
+      <div className={`flex-1 flex flex-col min-w-0 w-full ${printingOrder ? 'print:hidden' : ''}`}>
         {/* Banner Aktivasi Suara Bel (Jika belum pernah diklik di browser) */}
         {!audioUnlocked && (
           <div 
