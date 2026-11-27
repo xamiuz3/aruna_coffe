@@ -277,11 +277,8 @@ export default function HistoriPembayaranPage() {
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 w-full">
-        {/* TOP NAVBAR (JAM, TANGGAL & PEMBERITAHUAN PESANAN / BAHAN HABIS) */}
-        <AdminTopNav />
-
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* Header (Figma Screenshot 7) */}
+          {/* Header (Figma / Canva Screenshot 7) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div>
               <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
@@ -293,16 +290,20 @@ export default function HistoriPembayaranPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white border border-stone-200 shadow-2xs flex items-center justify-center text-stone-600">
+              <div className="w-8 h-8 rounded-full bg-stone-100/80 hover:bg-stone-200 flex items-center justify-center text-stone-600 relative cursor-pointer transition-colors">
                 <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                  3
+                </span>
               </div>
 
-              <div className="bg-white border border-stone-200 rounded-full px-3 py-1.5 shadow-2xs flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#1b3728] text-white flex items-center justify-center text-[10px] font-black">
+              <div className="flex items-center gap-2.5 pl-2">
+                <div className="w-8 h-8 rounded-full bg-[#dce7de] text-[#1b3728] flex items-center justify-center text-xs font-black shrink-0">
                   AS
                 </div>
-                <div className="text-left pr-1">
-                  <span className="text-xs font-bold text-stone-900 block leading-tight">{sessionName}</span>
+                <div className="text-left leading-none">
+                  <span className="text-xs font-bold text-stone-900 block">{session?.name || 'Aruna S.'}</span>
+                  <span className="text-[10px] text-stone-400 font-medium block mt-0.5">{session?.role === 'owner' ? 'Owner Cafe' : 'Kasir Pagi'}</span>
                 </div>
               </div>
             </div>

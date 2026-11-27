@@ -725,11 +725,10 @@ function ArunaPochaStyleContent() {
                   setMainTab('home');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
-                  mainTab === 'home'
-                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${mainTab === 'home'
+                  ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
+                  }`}
               >
                 <Home className="w-3.5 h-3.5" />
                 <span>Beranda</span>
@@ -740,11 +739,10 @@ function ArunaPochaStyleContent() {
                   setMainTab('order');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
-                  mainTab === 'order'
-                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${mainTab === 'order'
+                  ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
+                  }`}
               >
                 <Utensils className="w-3.5 h-3.5" />
                 <span>Dine In</span>
@@ -755,11 +753,10 @@ function ArunaPochaStyleContent() {
                   setMainTab('reservation');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
-                  mainTab === 'reservation'
-                    ? 'bg-white text-stone-900 shadow-2xs font-bold'
-                    : 'text-stone-600 hover:text-stone-900'
-                }`}
+                className={`px-3.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${mainTab === 'reservation'
+                  ? 'bg-white text-stone-900 shadow-2xs font-bold'
+                  : 'text-stone-600 hover:text-stone-900'
+                  }`}
               >
                 <CalendarDays className="w-3.5 h-3.5" />
                 <span>Reservasi</span>
@@ -1379,7 +1376,7 @@ function ArunaPochaStyleContent() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12 sm:pt-16 pb-12">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-                
+
                 {/* Left Column: Heading & Description */}
                 <div className="lg:col-span-6 flex flex-col justify-center text-left space-y-4">
                   {/* Eyebrow */}
@@ -1403,7 +1400,7 @@ function ArunaPochaStyleContent() {
 
                 {/* Right Column: Two Interactive Cards (Figma) */}
                 <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-                  
+
                   {/* Card 01 - Dine In */}
                   <div
                     onClick={() => {
@@ -1478,7 +1475,7 @@ function ArunaPochaStyleContent() {
               {/* Bottom Operational Info Bar - Matching Figma */}
               <div className="border-t border-stone-300/70 pt-8 mt-12 sm:mt-16">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  
+
                   <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-12">
                     {/* Jam Operasional */}
                     <div className="flex items-start gap-3">
@@ -2778,9 +2775,8 @@ function ArunaPochaStyleContent() {
               setMainTab('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              mainTab === 'home' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-            }`}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'home' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
           >
             <div className={`p-1 rounded-xl transition-all ${mainTab === 'home' ? 'bg-stone-100 text-stone-900' : ''}`}>
               <Home className="w-5 h-5" />
@@ -2797,9 +2793,8 @@ function ArunaPochaStyleContent() {
               setMainTab('order');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              mainTab === 'order' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-            }`}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'order' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
           >
             <div className={`p-1 rounded-xl transition-all ${mainTab === 'order' ? 'bg-stone-100 text-stone-900' : ''}`}>
               <Utensils className="w-5 h-5" />
@@ -2816,9 +2811,8 @@ function ArunaPochaStyleContent() {
               setMainTab('reservation');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              mainTab === 'reservation' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-            }`}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'reservation' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
           >
             <div className={`p-1 rounded-xl transition-all ${mainTab === 'reservation' ? 'bg-stone-100 text-stone-900' : ''}`}>
               <CalendarDays className="w-5 h-5" />

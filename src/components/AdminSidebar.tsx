@@ -14,14 +14,17 @@ import {
   ExternalLink, 
   ChevronRight, 
   ChevronLeft, 
+  ChevronDown,
   Menu, 
   X, 
   Volume2, 
   VolumeX,
-  PanelLeftClose,
-  PanelLeftOpen,
   LogOut,
-  UserCircle2
+  UserCircle2,
+  Coffee,
+  MessageSquare,
+  LayoutGrid,
+  FileText
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -86,7 +89,7 @@ export function AdminSidebar({
       title: 'Pesanan & Reservasi',
       shortTitle: 'Pesanan',
       href: '/kasir',
-      icon: UtensilsCrossed,
+      icon: FileText,
       badge: pendingOrdersCount > 0 ? pendingOrdersCount : null,
       badgeColor: 'bg-[#c85a32] text-white',
     },
@@ -94,7 +97,7 @@ export function AdminSidebar({
       title: 'Denah & QR Meja',
       shortTitle: 'Denah Meja',
       href: '/kasir/meja',
-      icon: QrCode,
+      icon: LayoutGrid,
     },
     {
       title: 'Stok Dessert',
@@ -293,227 +296,94 @@ export function AdminSidebar({
       )}
 
       {/* ======================================================== */}
-      {/* 3. DESKTOP & TABLET SIDEBAR (BISA DI-MINIMIZE 100%)       */}
+      {/* 3. DESKTOP SIDEBAR (EXACT MATCH FIGMA / CANVA MOCKUP)     */}
       {/* ======================================================== */}
-      <aside 
-        className={`hidden lg:flex flex-col justify-between shrink-0 z-40 bg-[#162a1f] text-stone-200 border-r border-stone-800 lg:h-screen lg:sticky lg:top-0 transition-all duration-200 print:hidden ${
-          isCollapsed ? 'w-20' : 'w-64'
-        }`}
-      >
-        <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
-          {/* Header & Logo with Minimize Button */}
-          <div className={`p-4 border-b border-stone-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-            {!isCollapsed ? (
-              <>
-                <Link href="/" className="flex items-center gap-3 group overflow-hidden">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shrink-0 border border-white/10 bg-[#f7f5f0]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/aruna-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="truncate">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-black text-white tracking-widest uppercase">ARUNA</span>
-                      <span className="px-1.5 py-0.2 rounded bg-emerald-700 text-white text-[8px] font-black uppercase">POS</span>
-                    </div>
-                    <span className="text-[10px] text-stone-400 font-bold block uppercase tracking-wider truncate">
-                      Kitchen & Dispatch
-                    </span>
-                  </div>
-                </Link>
+      <aside className="hidden lg:flex flex-col justify-between shrink-0 z-40 bg-[#162a1f] text-stone-200 border-r border-stone-800/80 w-64 lg:h-screen lg:sticky lg:top-0 print:hidden select-none">
+        <div className="flex flex-col flex-1 p-5 space-y-6 overflow-y-auto no-scrollbar">
+          {/* Header & Logo */}
+          <Link href="/" className="flex items-center gap-3 pt-1 group">
+            <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/90 shrink-0 bg-white/5 shadow-xs">
+              <Coffee className="w-5 h-5 stroke-[1.8]" />
+            </div>
+            <div>
+              <span className="font-serif font-black text-sm text-white tracking-widest uppercase block leading-tight">
+                ARUNA
+              </span>
+              <span className="text-[9px] font-sans text-stone-400 tracking-widest block uppercase font-medium mt-0.5">
+                CAFE & SPACE
+              </span>
+            </div>
+          </Link>
 
-                <button
-                  type="button"
-                  onClick={handleToggleCollapse}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer shrink-0 ml-1"
-                  title="Minimize Sidebar (Persempit)"
-                >
-                  <PanelLeftClose className="w-4 h-4" />
-                </button>
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md shrink-0 border border-white/10 bg-[#f7f5f0]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/aruna-logo.jpg" alt="Logo" className="w-full h-full object-cover" />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleCollapse}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors cursor-pointer"
-                  title="Perluas Sidebar"
-                >
-                  <PanelLeftOpen className="w-4 h-4 text-[#c87a58]" />
-                </button>
+          {/* Akses Aktif Selector Card */}
+          <div className="bg-[#1a3224]/90 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
+            <div>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500/90 block">
+                AKSES AKTIF
+              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="text-xs font-bold text-white tracking-tight">{session?.shift || 'Shift Pagi'}</span>
               </div>
-            )}
+            </div>
+            <ChevronDown className="w-4 h-4 text-stone-400" />
           </div>
 
           {/* Navigation Items */}
-          <div className="p-3 space-y-6">
-            <div>
-              {!isCollapsed && (
-                <span className="px-3 text-[10px] font-black uppercase tracking-widest text-stone-500 block mb-2">
-                  Menu Utama
-                </span>
-              )}
+          <div className="space-y-2">
+            <span className="px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400 block mb-2.5">
+              MENU UTAMA
+            </span>
 
-              <nav className="space-y-1.5 text-xs">
-                {navItems.map((item) => {
-                  const isActive = currentPath === item.href;
-                  const Icon = item.icon;
+            <nav className="space-y-1.5 text-xs">
+              {navItems.map((item) => {
+                const isActive = currentPath === item.href;
+                const Icon = item.icon;
 
-                  if (isCollapsed) {
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`relative flex items-center justify-center p-3 rounded-xl transition-all group ${
-                          isActive
-                            ? 'bg-[#c87a58] text-white shadow-xs'
-                            : 'text-stone-400 hover:text-white hover:bg-stone-800'
-                        }`}
-                        title={item.title}
-                      >
-                        <Icon className="w-5 h-5 shrink-0" />
-                        {item.badge !== null && item.badge !== undefined && (
-                          <span className={`absolute -top-1 -right-1 text-[9px] font-black px-1.5 py-0.2 rounded-full border border-stone-900 ${item.badgeColor || 'bg-stone-700 text-white'}`}>
-                            {item.badge}
-                          </span>
-                        )}
-                        {/* Hover Tooltip Floating */}
-                        <div className="absolute left-full ml-2 px-2.5 py-1 bg-stone-900 text-white text-[11px] font-bold rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-                          {item.title}
-                        </div>
-                      </Link>
-                    );
-                  }
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold tracking-tight transition-colors ${
-                        isActive
-                          ? 'bg-[#c87a58] text-white shadow-xs'
-                          : 'text-stone-300 hover:text-white hover:bg-stone-800'
-                      }`}
-                    >
-                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-stone-400'}`} />
-                      <span className="flex-1 truncate">{item.title}</span>
-                      {item.badge !== null && item.badge !== undefined && (
-                        <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-stone-700 text-white'}`}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Quick Link Menu Tamu */}
-            <div>
-              {!isCollapsed && (
-                <span className="px-3 text-[10px] font-black uppercase tracking-widest text-stone-500 block mb-2">
-                  Pintasan Tamu
-                </span>
-              )}
-              <nav className="space-y-1 text-xs">
-                {isCollapsed ? (
+                return (
                   <Link
-                    href="/order?table=Meja%2014"
-                    target="_blank"
-                    className="flex items-center justify-center p-3 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition-colors group relative"
-                    title="Buka Web Menu Tamu"
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all ${
+                      isActive
+                        ? 'border border-white/15 bg-white/10 text-white font-bold shadow-xs'
+                        : 'text-stone-400 hover:text-white hover:bg-white/5 font-medium'
+                    }`}
                   >
-                    <ExternalLink className="w-5 h-5 shrink-0" />
-                    <div className="absolute left-full ml-2 px-2.5 py-1 bg-stone-900 text-white text-[11px] font-bold rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-                      Web Menu Tamu
-                    </div>
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-stone-400'}`} />
+                    <span className="flex-1 truncate">{item.title}</span>
+                    {item.badge !== null && item.badge !== undefined && (
+                      <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-full ${item.badgeColor || 'bg-stone-700 text-white'}`}>
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
-                ) : (
-                  <Link
-                    href="/order?table=Meja%2014"
-                    target="_blank"
-                    className="flex items-center justify-between px-3.5 py-2 rounded-xl font-bold text-stone-300 hover:text-white hover:bg-stone-800 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <ExternalLink className="w-4 h-4 text-stone-400 shrink-0" />
-                      <span className="truncate">Web Menu Tamu</span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-stone-500 shrink-0" />
-                  </Link>
-                )}
-              </nav>
-            </div>
+                );
+              })}
+            </nav>
           </div>
         </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-3 border-t border-stone-800 bg-[#112218] space-y-2 text-xs">
-          {onToggleSound && (
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-              {!isCollapsed && <span className="text-[11px] text-stone-400">Audio Bel:</span>}
-              <button
-                type="button"
-                onClick={onToggleSound}
-                className={`p-2 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  soundEnabled
-                    ? 'bg-[#c87a58] text-white'
-                    : 'bg-stone-800 text-stone-400 border border-stone-700'
-                }`}
-                title={soundEnabled ? 'Audio Notif Aktif' : 'Audio Notif Mute'}
-              >
-                {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-                {!isCollapsed && <span>{soundEnabled ? 'Aktif' : 'Mute'}</span>}
-              </button>
+        {/* Bottom Sidebar: WhatsApp Bot & Logout */}
+        <div className="p-4 space-y-3 border-t border-white/5 bg-[#122319]">
+          <div className="bg-[#1a3224]/80 border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0">
+              <MessageSquare className="w-4 h-4 text-emerald-400" />
             </div>
-          )}
+            <div>
+              <span className="text-xs font-bold text-white block leading-tight">WhatsApp Bot</span>
+              <span className="text-[10px] text-emerald-400 font-medium block">● Tersambung</span>
+            </div>
+          </div>
 
-          {!isCollapsed ? (
-            <div className="pt-2 border-t border-stone-800/80 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-stone-400">
-                <span>Shift: Aktif</span>
-                <span className="font-mono text-emerald-400 font-bold">● Online</span>
-              </div>
-
-              {session && (
-                <div className="p-2 rounded-xl bg-stone-900/90 border border-stone-800 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-stone-800 flex items-center justify-center text-stone-300 font-black text-xs shrink-0 border border-stone-700">
-                      {session.username.slice(0, 1).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-bold text-white truncate">{session.name}</p>
-                      <span className="text-[9px] text-[#c87a58] font-bold uppercase">{session.role}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="p-1 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                    title="Keluar / Logout"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 pt-2 border-t border-stone-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" title="Shift Kasir: Online" />
-              {session && (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                  title={`Logout (${session.username})`}
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-stone-400 hover:text-rose-400 text-xs font-medium px-2 py-1.5 transition-colors cursor-pointer w-full text-left"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Keluar akun</span>
+          </button>
         </div>
       </aside>
     </>

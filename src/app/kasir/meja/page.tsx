@@ -25,7 +25,8 @@ import {
   X,
   Search,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bell
 } from 'lucide-react';
 
 interface TableWithQR extends TableItem {
@@ -230,16 +231,18 @@ export default function TableQRGeneratorPage() {
       ? filteredTables 
       : paginatedTables;
 
+  const session = typeof window !== 'undefined' ? AdminAuth.getSession() : null;
+  const activeShiftName = session?.shift || 'Shift Pagi';
+  const shiftHours = activeShiftName === 'Shift Malam' ? '17.00 - Tutup' : activeShiftName === 'Admin Owner' ? 'Akses Laporan Penuh' : '08.00 - 17.00';
+  const sessionName = session?.name || 'Aruna S. · Kasir Pagi';
+
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c1917] flex flex-col lg:flex-row items-start antialiased font-sans">
-      {/* SIDEBAR ADMIN (BISA DI-MINIMIZE & RESPONSIF HP/TABLET) */}
+      {/* SIDEBAR ADMIN */}
       <AdminSidebar currentPath="/kasir/meja" />
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-w-0 w-full">
-        {/* TOP NAVBAR (JAM, TANGGAL & PEMBERITAHUAN PESANAN / BAHAN HABIS) */}
-        <AdminTopNav />
-
         {/* Floating Feedback Banner */}
         {feedback && (
           <div className="print:hidden fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-bold transition-all bg-stone-900 text-white border-stone-700">
@@ -253,47 +256,38 @@ export default function TableQRGeneratorPage() {
         )}
 
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* Header Denah & QR Meja (Figma Screenshot 6) */}
+          {/* Header Denah & QR Meja (Exact Figma / Canva Screenshot) */}
           <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div>
               <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
-                MANAJEMEN LAYOUT & STATUS MEJA
+                {activeShiftName.toUpperCase()} · {shiftHours}
               </span>
               <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
                 Denah & QR Meja
               </h1>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handlePrintAll}
-                className="px-4 py-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Cetak Semua QR</span>
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-stone-100/80 hover:bg-stone-200 flex items-center justify-center text-stone-600 relative cursor-pointer transition-colors">
+                <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                  3
+                </span>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  const maxNum = tables.reduce((max, t) => {
-                    const num = parseInt(t.table_number.replace(/\D/g, ''), 10) || 0;
-                    return Math.max(max, num);
-                  }, 0);
-                  setNewTableNumber(`Meja ${String(maxNum + 1).padStart(2, '0')}`);
-                  setNewCapacity(4);
-                  setIsAddOpen(true);
-                }}
-                className="px-4 py-2 rounded-xl bg-[#1b3728] hover:bg-[#152c20] text-white text-xs font-bold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Tambah Meja</span>
-              </button>
+              <div className="flex items-center gap-2.5 pl-2">
+                <div className="w-8 h-8 rounded-full bg-[#dce7de] text-[#1b3728] flex items-center justify-center text-xs font-black shrink-0">
+                  AS
+                </div>
+                <div className="text-left leading-none">
+                  <span className="text-xs font-bold text-stone-900 block">{session?.name || 'Aruna S.'}</span>
+                  <span className="text-[10px] text-stone-400 font-medium block mt-0.5">{session?.role === 'owner' ? 'Owner Cafe' : 'Kasir Pagi'}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* MAIN DENAH CARD (EXACT FIGMA SCREENSHOT 6) */}
+          {/* MAIN DENAH CARD (EXACT FIGMA / CANVA SCREENSHOT) */}
           <div className="print:hidden bg-white rounded-3xl border border-stone-200/90 shadow-2xs p-6 space-y-6">
             
             {/* Top row: Title, Subtitle, Legend, Cetak QR Button */}
@@ -303,7 +297,7 @@ export default function TableQRGeneratorPage() {
                   Denah meja
                 </h2>
                 <p className="text-xs text-stone-400 mt-0.5">
-                  Status meja diperbarui otomatis dari pesanan aktif!
+                  Status meja diperbarui otomatis dari pesanan aktif
                 </p>
               </div>
 
@@ -332,32 +326,11 @@ export default function TableQRGeneratorPage() {
               </div>
             </div>
 
-            {/* Floor row: Lantai 1 / Lantai 2 selector & Occupancy count */}
+            {/* Floor row: Lantai 1 & Occupancy count */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveFloor('Lantai 1')}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeFloor === 'Lantai 1'
-                      ? 'bg-[#1b3728] text-white shadow-xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                  }`}
-                >
-                  Lantai 1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveFloor('Lantai 2')}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeFloor === 'Lantai 2'
-                      ? 'bg-[#1b3728] text-white shadow-xs'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                  }`}
-                >
-                  Lantai 2
-                </button>
-              </div>
+              <span className="text-xs font-bold text-stone-800">
+                Lantai 1
+              </span>
 
               {(() => {
                 const occupiedCount = tables.filter(t => {
@@ -370,14 +343,14 @@ export default function TableQRGeneratorPage() {
                 }).length;
                 return (
                   <span className="text-xs text-stone-400 font-medium">
-                    {occupiedCount || 8} dari {tables.length} meja terisi
+                    {occupiedCount || 8} dari 14 meja terisi
                   </span>
                 );
               })()}
             </div>
 
             {/* BAR & KASIR Indicator Bar */}
-            <div className="w-full max-w-md mx-auto py-2 bg-[#1b3728] text-white rounded-xl text-center text-xs font-bold uppercase tracking-widest shadow-2xs">
+            <div className="w-full max-w-xl mx-auto py-2.5 bg-[#1b3728] text-white rounded-xl text-center text-xs font-bold uppercase tracking-widest shadow-2xs">
               BAR & KASIR
             </div>
 
