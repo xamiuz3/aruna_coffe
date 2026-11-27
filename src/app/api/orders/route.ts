@@ -19,32 +19,36 @@ function getServerOrders(): Order[] {
 }
 
 export async function GET() {
+  const memoryOrders = getServerOrders();
+
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
         .from('orders')
         .select('*, items:order_items(*)')
         .order('created_at', { ascending: false });
-      if (!error && data) {
-        return NextResponse.json({ success: true, orders: data }, {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
+      if (!error && data && data.length > 0) {
+        // Merge Supabase with server in-memory orders
+        const idMap = new Map<string, Order>();
+        (data as Order[]).forEach(o => idMap.set(o.id, o));
+        memoryOrders.forEach(o => {
+          if (!idMap.has(o.id)) {
+            idMap.set(o.id, o);
           }
+        });
+        const merged = Array.from(idMap.values()).sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        return NextResponse.json({ success: true, orders: merged }, {
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
         });
       }
     } catch (err) {
       console.warn('Supabase get orders server error:', err);
     }
-    // Jika Supabase aktif tapi gagal query, kembalikan array kosong, JANGAN inject dummy/mock data
-    return NextResponse.json({ success: true, orders: [] }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
-      }
-    });
   }
 
-  const orders = getServerOrders();
-  return NextResponse.json({ success: true, orders }, {
+  return NextResponse.json({ success: true, orders: memoryOrders }, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
     }
@@ -65,6 +69,46 @@ export async function POST(req: NextRequest) {
       currentOrders[existingIndex] = { ...currentOrders[existingIndex], ...newOrder };
     } else {
       currentOrders.unshift(newOrder);
+    }
+
+    // Jika Supabase aktif, coba insert/upsert di Supabase juga
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('orders').upsert({
+          id: newOrder.id,
+          order_number: newOrder.order_number,
+          table_number: newOrder.table_number,
+          customer_name: newOrder.customer_name,
+          customer_phone: newOrder.customer_phone,
+          order_type: newOrder.order_type,
+          reservation_date: newOrder.reservation_date,
+          guest_count: newOrder.guest_count,
+          status: newOrder.status,
+          shift: newOrder.shift,
+          payment_method: newOrder.payment_method,
+          payment_proof_url: newOrder.payment_proof_url,
+          subtotal: newOrder.subtotal,
+          total_amount: newOrder.total_amount,
+          notes: newOrder.notes,
+          majoo_recorded: newOrder.majoo_recorded || false,
+        });
+
+        if (newOrder.items && newOrder.items.length > 0) {
+          const itemsToInsert = newOrder.items.map(i => ({
+            id: i.id,
+            order_id: newOrder.id,
+            menu_item_id: i.menu_item_id,
+            item_name: i.item_name,
+            price: i.price,
+            quantity: i.quantity,
+            subtotal: i.subtotal,
+            notes: i.notes,
+          }));
+          await supabase.from('order_items').upsert(itemsToInsert);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase server relay sync error:', sbErr);
+      }
     }
 
     return NextResponse.json({ success: true, order: newOrder }, {

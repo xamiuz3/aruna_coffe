@@ -49,6 +49,7 @@ export function AdminSidebar({
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
   // Admin auth session
   const [session, setSession] = useState<AdminSession | null>(null);
+  const [isShiftDropdownOpen, setIsShiftDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -316,17 +317,52 @@ export function AdminSidebar({
           </Link>
 
           {/* Akses Aktif Selector Card */}
-          <div className="bg-[#1a3224]/90 border border-white/10 rounded-2xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500/90 block">
-                AKSES AKTIF
-              </span>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-xs font-bold text-white tracking-tight">{session?.shift || 'Shift Pagi'}</span>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsShiftDropdownOpen(!isShiftDropdownOpen)}
+              className="w-full bg-[#1a3224]/90 hover:bg-[#1a3224] border border-white/10 rounded-2xl p-3 flex items-center justify-between transition-colors cursor-pointer text-left"
+            >
+              <div>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500/90 block">
+                  AKSES AKTIF
+                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-xs font-bold text-white tracking-tight">{session?.shift || 'Shift Pagi'}</span>
+                </div>
               </div>
-            </div>
-            <ChevronDown className="w-4 h-4 text-stone-400" />
+              <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${isShiftDropdownOpen ? 'rotate-180 text-amber-400' : ''}`} />
+            </button>
+
+            {isShiftDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#122219] border border-white/15 rounded-2xl shadow-xl p-2 z-50 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                {(['Shift Pagi', 'Shift Malam', 'Admin Owner'] as const).map((s) => {
+                  const isCur = (session?.shift || 'Shift Pagi') === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        AdminAuth.updateShift(s);
+                        setIsShiftDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                        isCur ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-stone-300 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span>{s}</span>
+                        <span className="text-[9px] text-stone-400 font-normal">
+                          {s === 'Shift Pagi' ? '08.00 - 17.00' : s === 'Shift Malam' ? '17.00 - Tutup' : 'Akses Penuh'}
+                        </span>
+                      </div>
+                      {isCur && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Navigation Items */}

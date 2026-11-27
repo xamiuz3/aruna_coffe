@@ -59,6 +59,14 @@ export default function KasirDashboard() {
   const [audioUnlocked, setAudioUnlocked] = useState<boolean>(false);
   const [notificationBanner, setNotificationBanner] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    setSession(AdminAuth.getSession());
+    const handleAuthChange = () => setSession(AdminAuth.getSession());
+    window.addEventListener('aruna_admin_auth_changed', handleAuthChange);
+    return () => window.removeEventListener('aruna_admin_auth_changed', handleAuthChange);
+  }, []);
 
   const prevOrderCountRef = useRef<number>(0);
   const knownOrderIdsRef = useRef<Set<string>>(new Set());
@@ -265,10 +273,10 @@ export default function KasirDashboard() {
     }
   };
 
-  const session = typeof window !== 'undefined' ? AdminAuth.getSession() : null;
-  const activeShiftName = session?.shift || 'Shift Pagi';
+  const activeSession = session || (typeof window !== 'undefined' ? AdminAuth.getSession() : null);
+  const activeShiftName = activeSession?.shift || 'Shift Pagi';
   const shiftHours = activeShiftName === 'Shift Malam' ? '17.00 - Tutup' : activeShiftName === 'Admin Owner' ? 'Akses Laporan Penuh' : '08.00 - 17.00';
-  const sessionName = session?.name || 'Aruna S. · Kasir Pagi';
+  const sessionName = activeSession?.name || 'Aruna S. · Kasir Pagi';
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c1917] flex flex-col lg:flex-row items-start antialiased font-sans">
       {/* SIDEBAR ADMIN (BISA DI-MINIMIZE & RESPONSIF HP/TABLET) */}
@@ -333,8 +341,8 @@ export default function KasirDashboard() {
                   AS
                 </div>
                 <div className="text-left leading-none">
-                  <span className="text-xs font-bold text-stone-900 block">{session?.name || 'Aruna S.'}</span>
-                  <span className="text-[10px] text-stone-400 font-medium block mt-0.5">{session?.role === 'owner' ? 'Owner Cafe' : 'Kasir Pagi'}</span>
+                  <span className="text-xs font-bold text-stone-900 block">{activeSession?.name || 'Aruna S.'}</span>
+                  <span className="text-[10px] text-stone-400 font-medium block mt-0.5">{activeSession?.role === 'owner' ? 'Owner Cafe' : activeShiftName === 'Shift Malam' ? 'Kasir Malam' : 'Kasir Pagi'}</span>
                 </div>
               </div>
             </div>

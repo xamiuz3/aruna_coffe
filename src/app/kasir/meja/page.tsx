@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { CafeStore } from '@/lib/store';
 import { AdminAuth } from '@/lib/auth';
 import { TableItem, Order } from '@/lib/types';
+import { RealtimeOrders } from '@/lib/realtime';
 import { AdminSidebar } from '@/components/AdminSidebar';
 import { AdminTopNav } from '@/components/AdminTopNav';
 import { 
@@ -122,8 +123,16 @@ export default function TableQRGeneratorPage() {
     const handleUpdate = () => {
       CafeStore.getOrders().then(setOrders);
     };
+    const unsubscribeRealtime = RealtimeOrders.subscribe((event) => {
+      if (event.type === 'NEW_ORDER' || event.type === 'UPDATE_ORDER') {
+        CafeStore.getOrders().then(setOrders);
+      }
+    });
     window.addEventListener('arjuna_store_updated', handleUpdate);
-    return () => window.removeEventListener('arjuna_store_updated', handleUpdate);
+    return () => {
+      unsubscribeRealtime();
+      window.removeEventListener('arjuna_store_updated', handleUpdate);
+    };
   }, []);
 
 

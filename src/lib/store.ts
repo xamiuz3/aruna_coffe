@@ -6,6 +6,7 @@ import {
   RecipeItem,
   Order,
   OrderStatus,
+  ShiftType,
   StockMutation,
   CartItem,
   PaymentSettings
@@ -90,8 +91,21 @@ export const CafeStore = {
   },
 
   getInitialOrders(): Order[] {
+    const normalize = (list: Order[]): Order[] => {
+      return list.map(o => {
+        if (!o.shift) {
+          const h = new Date(o.created_at).getHours();
+          const shift: ShiftType = (h >= 8 && h < 17) ? 'Shift Pagi' : 'Shift Malam';
+          return { ...o, shift };
+        }
+        return o;
+      });
+    };
     if (memoryCacheOrders) return memoryCacheOrders.data;
-    return getStorage<Order[]>(STORAGE_KEY_ORDERS, []);
+    const raw = getStorage<Order[]>(STORAGE_KEY_ORDERS, []);
+    const normalized = normalize(raw);
+    memoryCacheOrders = { data: normalized, timestamp: Date.now() };
+    return normalized;
   },
 
   getInitialTables(): TableItem[] {
@@ -541,9 +555,17 @@ export const CafeStore = {
 
     const fallbackOrders = isSupabaseConfigured ? [] : INITIAL_ORDERS;
     const rawStored = getStorage<Order[]>(STORAGE_KEY_ORDERS, fallbackOrders);
-    const stored = isSupabaseConfigured
+    const storedRaw = isSupabaseConfigured
       ? rawStored.filter(o => !['ord-101', 'res-201', 'ord-hist-101'].includes(o.id))
       : rawStored;
+    const stored = storedRaw.map(o => {
+      if (!o.shift) {
+        const h = new Date(o.created_at).getHours();
+        const shift: ShiftType = (h >= 8 && h < 17) ? 'Shift Pagi' : 'Shift Malam';
+        return { ...o, shift };
+      }
+      return o;
+    });
     memoryCacheOrders = { data: stored, timestamp: now };
 
     // Sinkronisasi server relay /api/orders secara non-blocking di background (0ms render time)
@@ -589,6 +611,7 @@ export const CafeStore = {
     payment_proof_url?: string;
     cart: CartItem[];
     notes?: string;
+    shift?: 'Shift Pagi' | 'Shift Malam';
   }): Promise<Order> {
     const orderNumber = `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
     const subtotal = params.cart.reduce((acc, item) => acc + item.subtotal, 0);
@@ -598,6 +621,10 @@ export const CafeStore = {
     const initialStatus: OrderStatus = params.payment_method === 'qris'
       ? 'pending_payment'
       : 'confirmed';
+
+    const currentHour = new Date().getHours();
+    const calculatedShift: 'Shift Pagi' | 'Shift Malam' = (currentHour >= 8 && currentHour < 17) ? 'Shift Pagi' : 'Shift Malam';
+    const orderShift = params.shift || calculatedShift;
 
     const newOrder: Order = {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ord-${Date.now()}`,
@@ -610,6 +637,7 @@ export const CafeStore = {
       reservation_date: params.reservation_date,
       guest_count: params.guest_count,
       status: initialStatus,
+      shift: orderShift,
       payment_method: params.payment_method,
       payment_proof_url: params.payment_proof_url || '',
       subtotal,

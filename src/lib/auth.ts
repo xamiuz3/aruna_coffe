@@ -175,6 +175,32 @@ export const AdminAuth = {
   },
 
   /**
+   * Perbarui shift kasir yang aktif tanpa perlu logout
+   */
+  updateShift(newShift: 'Shift Pagi' | 'Shift Malam' | 'Admin Owner'): void {
+    if (typeof window === 'undefined') return;
+    const session = this.getSession();
+    if (!session) return;
+    session.shift = newShift;
+    if (newShift === 'Shift Pagi') {
+      session.role = 'kasir';
+      session.name = 'Aruna S. (Kasir Pagi)';
+    } else if (newShift === 'Shift Malam') {
+      session.role = 'kasir';
+      session.name = 'Aruna B. (Kasir Malam)';
+    } else {
+      session.role = 'owner';
+      session.name = 'Owner Aruna Cafe';
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_ADMIN_AUTH, JSON.stringify(session));
+      window.dispatchEvent(new Event('aruna_admin_auth_changed'));
+    } catch (e) {
+      console.error('Update shift error:', e);
+    }
+  },
+
+  /**
    * Logout dan hapus sesi admin
    */
   logout(): void {

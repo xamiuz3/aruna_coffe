@@ -1,6 +1,7 @@
 export type OrderStatus = 'pending_payment' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
 export type PaymentMethod = 'cashier' | 'qris';
 export type OrderKind = 'dine_in' | 'reservation';
+export type ShiftType = 'Shift Pagi' | 'Shift Malam';
 export type MutationType = 'order_deduction' | 'manual_adjustment' | 'restock';
 
 export interface PaymentSettings {
@@ -110,6 +111,7 @@ export interface Order {
   reservation_date?: string;
   guest_count: number;
   status: OrderStatus;
+  shift?: ShiftType;
   payment_method: PaymentMethod;
   payment_proof_url?: string;
   subtotal: number;
