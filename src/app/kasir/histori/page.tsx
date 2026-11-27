@@ -259,7 +259,7 @@ export default function HistoriPembayaranPage() {
   };
 
   // ========================================================
-  // DYNAMIC REKAP & TUTUP SHIFT ACCUMULATION (QA VERIFIED)
+  // 100% REAL-TIME REKAP & TUTUP SHIFT (NO FAKE BASELINE DATA)
   // ========================================================
   const session = currentSession || (typeof window !== 'undefined' ? AdminAuth.getSession() : null);
   const activeShiftName = selectedShift;
@@ -270,106 +270,33 @@ export default function HistoriPembayaranPage() {
     : '08.00 - 17.00';
   const sessionName = session?.name || (selectedShift === 'Shift Malam' ? 'Aruna B. · Kasir Malam' : 'Aruna S. · Kasir Pagi');
 
-  // Seed baseline data from Figma / Canva designs
-  const BASE_SHIFT_DATA = {
-    'Shift Pagi': {
-      ordersCount: 64,
-      cash: 1840000,
-      qris: 2440000,
-      products: {
-        'Aruna Palm Latte': 24,
-        'Butter Croissant': 18,
-        'Matcha Cloud': 16,
-        'Nasi Goreng Aruna': 14,
-        'Sea Salt Caramel': 12,
-        'Siomay Dimsum Ayam (4 pcs)': 11,
-        'Es Teh Manis Jumbo': 10,
-        'Mie Aruna Gurih (Asin)': 8,
-        'Mie Aruna Manis (Kecap)': 7,
-        'Berry Blossom Tea': 6,
-        'Dimsum Mentai': 5,
-      } as Record<string, number>,
-    },
-    'Shift Malam': {
-      ordersCount: 38,
-      cash: 980000,
-      qris: 1420000,
-      products: {
-        'Nasi Goreng Aruna': 16,
-        'Mie Aruna Gurih (Asin)': 14,
-        'Mie Aruna Manis (Kecap)': 12,
-        'Siomay Dimsum Ayam (4 pcs)': 10,
-        'Aruna Palm Latte': 9,
-        'Sea Salt Caramel': 8,
-        'Es Teh Manis Jumbo': 8,
-        'Butter Croissant': 5,
-      } as Record<string, number>,
-    },
+  const isOrderToday = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    return d.toDateString() === new Date().toDateString();
   };
 
-  // Known initial mock orders to prevent double counting with baseline
-  const INITIAL_MOCK_IDS = new Set([
-    'ord-1082', 'ord-1081', 'rsv-0241', 'ord-1079', 
-    'ord-1065', 'ord-1064', 'ord-hist-101', 'res-hist-102'
-  ]);
-
-  // Determine dynamic orders added by customer / testing
-  const dynamicOrders = orders.filter(o => !INITIAL_MOCK_IDS.has(o.id) && o.status !== 'cancelled');
-
-  let baseCount = 0;
-  let baseCash = 0;
-  let baseQris = 0;
-  const productSalesMap = new Map<string, number>();
-
-  if (selectedShift === 'Shift Pagi') {
-    baseCount = BASE_SHIFT_DATA['Shift Pagi'].ordersCount;
-    baseCash = BASE_SHIFT_DATA['Shift Pagi'].cash;
-    baseQris = BASE_SHIFT_DATA['Shift Pagi'].qris;
-    Object.entries(BASE_SHIFT_DATA['Shift Pagi'].products).forEach(([name, count]) => {
-      productSalesMap.set(name, count);
-    });
-  } else if (selectedShift === 'Shift Malam') {
-    baseCount = BASE_SHIFT_DATA['Shift Malam'].ordersCount;
-    baseCash = BASE_SHIFT_DATA['Shift Malam'].cash;
-    baseQris = BASE_SHIFT_DATA['Shift Malam'].qris;
-    Object.entries(BASE_SHIFT_DATA['Shift Malam'].products).forEach(([name, count]) => {
-      productSalesMap.set(name, count);
-    });
-  } else {
-    // Semua Shift (Akumulasi Pagi + Malam)
-    baseCount = BASE_SHIFT_DATA['Shift Pagi'].ordersCount + BASE_SHIFT_DATA['Shift Malam'].ordersCount;
-    baseCash = BASE_SHIFT_DATA['Shift Pagi'].cash + BASE_SHIFT_DATA['Shift Malam'].cash;
-    baseQris = BASE_SHIFT_DATA['Shift Pagi'].qris + BASE_SHIFT_DATA['Shift Malam'].qris;
-    
-    // Gabung produk pagi & malam
-    Object.entries(BASE_SHIFT_DATA['Shift Pagi'].products).forEach(([name, count]) => {
-      productSalesMap.set(name, (productSalesMap.get(name) || 0) + count);
-    });
-    Object.entries(BASE_SHIFT_DATA['Shift Malam'].products).forEach(([name, count]) => {
-      productSalesMap.set(name, (productSalesMap.get(name) || 0) + count);
-    });
-  }
-
-  // Filter dynamic orders by selected shift
-  const matchingDynamicOrders = dynamicOrders.filter(o => {
+  // Filter strictly real non-cancelled orders FOR TODAY matching the selected shift
+  const shiftOrders = orders.filter(o => {
+    if (o.status === 'cancelled') return false;
+    if (!isOrderToday(o.created_at)) return false;
     if (selectedShift === 'Semua Shift') return true;
     const orderShift = o.shift || (new Date(o.created_at).getHours() >= 8 && new Date(o.created_at).getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
     return orderShift === selectedShift;
   });
 
-  // Increment from dynamic orders
-  let dynamicOrdersCount = matchingDynamicOrders.length;
-  let dynamicCash = 0;
-  let dynamicQris = 0;
+  const productSalesMap = new Map<string, number>();
+  let displayCash = 0;
+  let displayQris = 0;
 
-  matchingDynamicOrders.forEach(order => {
-    // Orders with valid payment status increment sales & products
+  shiftOrders.forEach(order => {
     const isValidPayment = order.status === 'confirmed' || order.status === 'processing' || order.status === 'completed';
     if (isValidPayment) {
       if (order.payment_method === 'cashier') {
-        dynamicCash += order.total_amount;
+        displayCash += order.total_amount;
       } else {
-        dynamicQris += order.total_amount;
+        displayQris += order.total_amount;
       }
 
       (order.items || []).forEach(item => {
@@ -379,9 +306,7 @@ export default function HistoriPembayaranPage() {
     }
   });
 
-  const displayOrdersCount = baseCount + dynamicOrdersCount;
-  const displayCash = baseCash + dynamicCash;
-  const displayQris = baseQris + dynamicQris;
+  const displayOrdersCount = shiftOrders.length;
   const displayTotal = displayCash + displayQris;
   const displayTax = Math.round(displayTotal * 0.1);
 
@@ -484,11 +409,7 @@ export default function HistoriPembayaranPage() {
               <ReceiptText className="w-4 h-4 text-[#1b3728]" />
               <span>Lihat Catatan Lengkap</span>
               <span className="px-2 py-0.5 rounded-full bg-[#edf3ee] text-[#1b3728] text-[10px] font-black">
-                {orders.filter(o => {
-                  if (selectedShift === 'Semua Shift') return true;
-                  const s = o.shift || (new Date(o.created_at).getHours() >= 8 && new Date(o.created_at).getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
-                  return s === selectedShift;
-                }).length}
+                {shiftOrders.length}
               </span>
             </button>
           </div>
@@ -520,7 +441,9 @@ export default function HistoriPembayaranPage() {
                   Total penjualan
                 </span>
                 <span className="text-3xl font-serif font-bold text-stone-900 mt-1 block">
-                  Rp {(displayTotal / 1000000).toFixed(2).replace('.', ',')} jt
+                  {displayTotal >= 1000000
+                    ? `Rp ${(displayTotal / 1000000).toFixed(2).replace('.', ',')} jt`
+                    : `Rp ${displayTotal.toLocaleString('id-ID')}`}
                 </span>
                 <span className="text-[11px] text-stone-400 font-medium block mt-0.5">
                   Tunai + QRIS
@@ -627,21 +550,20 @@ export default function HistoriPembayaranPage() {
 
                 {/* List items */}
                 <div className="divide-y divide-stone-100 max-h-56 overflow-y-auto no-scrollbar pt-1">
-                  {(productSalesList.length > 0 ? productSalesList : [
-                    { name: 'Aruna Palm Latte', count: 24 },
-                    { name: 'Butter Croissant', count: 18 },
-                    { name: 'Matcha Cloud', count: 16 },
-                    { name: 'Nasi Goreng Aruna', count: 14 },
-                    { name: 'Sea Salt Caramel', count: 12 },
-                    { name: 'Siomay Dimsum Ayam', count: 10 }
-                  ]).map((prod, idx) => (
-                    <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
-                      <span className="font-medium text-stone-800">{prod.name}</span>
-                      <span className="font-mono font-bold text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-lg">
-                        {prod.count} item
-                      </span>
+                  {productSalesList.length > 0 ? (
+                    productSalesList.map((prod, idx) => (
+                      <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
+                        <span className="font-medium text-stone-800">{prod.name}</span>
+                        <span className="font-mono font-bold text-stone-600 bg-stone-100 px-2.5 py-0.5 rounded-lg">
+                          {prod.count} item
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-10 text-center text-xs text-stone-400">
+                      Belum ada produk terjual pada {activeShiftName}.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -843,6 +765,7 @@ export default function HistoriPembayaranPage() {
                   {(() => {
                     const logOrders = orders
                       .filter(o => {
+                        if (!isOrderToday(o.created_at)) return false;
                         if (selectedShift !== 'Semua Shift') {
                           const s = o.shift || (new Date(o.created_at).getHours() >= 8 && new Date(o.created_at).getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
                           if (s !== selectedShift) return false;
