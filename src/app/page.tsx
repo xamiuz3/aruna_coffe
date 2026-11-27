@@ -2740,22 +2740,12 @@ function ArunaPochaStyleContent() {
       </footer>
 
       {/* ======================================================== */}
-      {/* 9. FLOATING BOTTOM CART BAR (PILL ACTION BAR)            */}
       {/* 9. FLOATING BOTTOM PILL ACTION BAR (EXACT FIGMA DESIGN)   */}
       {/* ======================================================== */}
-      {totalCartCount > 0 && !isCartDrawerOpen && (
-        <div className="fixed z-40 bottom-18 md:bottom-6 left-0 right-0 px-3 sm:px-4 pointer-events-none transition-all duration-300">
-          {(totalCartCount > 0 || (activeCustomerOrder && !isCartDrawerOpen)) && (
-            <div className="fixed z-40 bottom-18 md:bottom-6 left-0 right-0 px-4 pointer-events-none transition-all duration-300">
-              <div className="max-w-md mx-auto pointer-events-auto">
-                <div
-                  onClick={() => setIsCartDrawerOpen(true)}
-                  className="bg-[#1f1b18] text-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-[0_12px_32px_rgba(0,0,0,0.35)] border border-stone-800 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300 hover:scale-[1.01] transition-transform cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-stone-800/90 text-stone-200 flex items-center justify-center shrink-0 border border-stone-700/60 shadow-inner">
-                      <ShoppingBag className="w-5 h-5 text-stone-200" />
-                      {totalCartCount > 0 ? (
+      {(totalCartCount > 0 || (activeCustomerOrder && !isCartDrawerOpen)) && (
+        <div className="fixed z-40 bottom-18 md:bottom-6 left-0 right-0 px-4 pointer-events-none transition-all duration-300">
+          <div className="max-w-md mx-auto pointer-events-auto">
+            {totalCartCount > 0 ? (
               <div
                 onClick={() => setIsCartDrawerOpen(true)}
                 className="bg-[#16271e] text-white px-4 py-3 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.4)] border border-white/10 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5 duration-300 hover:scale-[1.01] transition-transform cursor-pointer"
@@ -2773,13 +2763,6 @@ function ArunaPochaStyleContent() {
                     </span>
                   </div>
                 </div>
-                <div className="min-w-0 text-left">
-                  <span className="text-[11px] sm:text-xs font-medium text-stone-300 block leading-tight">
-                    {totalCartCount} Menu
-                  </span>
-                  <span className="text-sm sm:text-base font-black font-mono text-white block leading-tight mt-0.5 tracking-tight">
-                    Rp {totalCartPrice.toLocaleString('id-ID')}
-                  </span>
 
                 <button
                   type="button"
@@ -2815,28 +2798,15 @@ function ArunaPochaStyleContent() {
                     </span>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsCartDrawerOpen(true);
-                }}
-                className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#c87a58] hover:bg-[#b86948] active:scale-95 text-white font-bold text-xs sm:text-sm tracking-wide flex items-center gap-1.5 shadow-md transition-all cursor-pointer shrink-0"
-              >
-                <span>Checkout</span>
-                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
-                    <div className="px-5 py-2.5 rounded-xl bg-[#d28a5c] hover:bg-[#c47c4e] text-stone-900 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors">
-                      <span>Lihat pesanan</span>
-                      <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-                    </div>
-                  </Link>
-            ) : null}
+                <div className="px-5 py-2.5 rounded-xl bg-[#d28a5c] hover:bg-[#c47c4e] text-stone-900 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors">
+                  <span>Lihat pesanan</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
                 </div>
-              </div>
+              </Link>
+            ) : null}
+          </div>
+        </div>
       )}
 
               {/* ======================================================== */}
