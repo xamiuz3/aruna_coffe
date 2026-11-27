@@ -65,6 +65,7 @@ export default function HistoriPembayaranPage() {
   const [shiftClosingNotes, setShiftClosingNotes] = useState<string>('');
   const [isShiftClosed, setIsShiftClosed] = useState<boolean>(false);
   const [printingOrder, setPrintingOrder] = useState<Order | null>(null);
+  const [isDetailLogOpen, setIsDetailLogOpen] = useState<boolean>(false);
 
   const fetchOrders = async () => {
     try {
@@ -438,35 +439,53 @@ export default function HistoriPembayaranPage() {
                 <div className="text-left leading-none">
                   <span className="text-xs font-bold text-stone-900 block">{session?.name || 'Aruna S.'}</span>
                   <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                    {session?.role === 'owner' ? 'Owner Cafe' : selectedShift === 'Shift Malam' ? 'Kasir Malam' : 'Kasir Pagi'}
+                    {session?.role === 'owner' ? 'Owner Cafe' : session?.shift === 'Shift Malam' ? 'Kasir Malam' : 'Kasir Pagi'}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* SHIFT SEPARATOR TABS (PAGI vs MALAM vs SEMUA SHIFT) */}
-          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-stone-200/60 rounded-2xl w-fit">
-            {(['Shift Pagi', 'Shift Malam', 'Semua Shift'] as const).map((s) => {
-              const isSelected = selectedShift === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSelectedShift(s)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                    isSelected
-                      ? 'bg-[#1b3728] text-white shadow-xs'
-                      : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
-                  }`}
-                >
-                  <span>{s}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-500'}`}>
-                    {s === 'Shift Pagi' ? '08.00–17.00' : s === 'Shift Malam' ? '17.00–Tutup' : 'Hari Ini'}
-                  </span>
-                </button>
-              );
-            })}
+          {/* SHIFT SEPARATOR TABS + TOMBOL CATATAN LENGKAP */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 p-1.5 bg-stone-200/60 rounded-2xl w-fit">
+              {(['Shift Pagi', 'Shift Malam', 'Semua Shift'] as const).map((s) => {
+                const isSelected = selectedShift === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedShift(s)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                      isSelected
+                        ? 'bg-[#1b3728] text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
+                    }`}
+                  >
+                    <span>{s}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-200 text-stone-500'}`}>
+                      {s === 'Shift Pagi' ? '08.00–17.00' : s === 'Shift Malam' ? '17.00–Tutup' : 'Hari Ini'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsDetailLogOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-200/90 text-xs font-bold flex items-center gap-2 shadow-2xs transition-all cursor-pointer active:scale-95"
+            >
+              <ReceiptText className="w-4 h-4 text-[#1b3728]" />
+              <span>Lihat Catatan Lengkap</span>
+              <span className="px-2 py-0.5 rounded-full bg-[#edf3ee] text-[#1b3728] text-[10px] font-black">
+                {orders.filter(o => {
+                  if (selectedShift === 'Semua Shift') return true;
+                  const s = o.shift || (new Date(o.created_at).getHours() >= 8 && new Date(o.created_at).getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
+                  return s === selectedShift;
+                }).length}
+              </span>
+            </button>
           </div>
 
           {/* 3 STAT CARDS (EXACT FIGMA SCREENSHOT 7) */}
@@ -729,6 +748,226 @@ export default function HistoriPembayaranPage() {
                     className="px-5 py-2 rounded-xl bg-[#1b3728] hover:bg-[#152c20] text-white font-bold text-xs"
                   >
                     Konfirmasi Tutup Shift
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL CATATAN LENGKAP REKAPAN TRANSAKSI */}
+          {isDetailLogOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
+              <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
+                {/* Modal Header */}
+                <div className="p-5 bg-[#162a1f] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-amber-300/90 block">
+                      CATATAN TRANSAKSI LENGKAP · {activeShiftName.toUpperCase()}
+                    </span>
+                    <h3 className="font-serif font-bold text-lg sm:text-xl text-white">
+                      Riwayat Pembeli, Meja, Waktu & Nominal
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleExportCSV}
+                      className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsDetailLogOpen(false)}
+                      className="p-2 rounded-xl text-stone-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                  <div className="relative flex-1 min-w-[220px]">
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Cari nama pembeli, meja, ID transaksi, atau menu..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 text-xs text-stone-800 placeholder:text-stone-400 outline-none focus:border-[#1b3728] bg-white"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-stone-200/70 p-1 rounded-xl">
+                    {(['all', 'cashier', 'qris'] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setMethodFilter(m)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          methodFilter === m
+                            ? 'bg-white text-stone-900 shadow-2xs'
+                            : 'text-stone-600 hover:text-stone-900'
+                        }`}
+                      >
+                        {m === 'all' ? 'Semua Metode' : m === 'cashier' ? 'Tunai' : 'QRIS'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table List */}
+                <div className="flex-1 overflow-auto p-4">
+                  {(() => {
+                    const logOrders = orders
+                      .filter(o => {
+                        if (selectedShift !== 'Semua Shift') {
+                          const s = o.shift || (new Date(o.created_at).getHours() >= 8 && new Date(o.created_at).getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
+                          if (s !== selectedShift) return false;
+                        }
+                        if (methodFilter !== 'all' && o.payment_method !== methodFilter) return false;
+                        if (searchQuery.trim()) {
+                          const q = searchQuery.toLowerCase().trim();
+                          const hit =
+                            o.order_number.toLowerCase().includes(q) ||
+                            o.customer_name.toLowerCase().includes(q) ||
+                            o.table_number.toLowerCase().includes(q) ||
+                            (o.customer_phone && o.customer_phone.toLowerCase().includes(q)) ||
+                            (o.items && o.items.some(i => i.item_name.toLowerCase().includes(q)));
+                          if (!hit) return false;
+                        }
+                        return true;
+                      })
+                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                    if (logOrders.length === 0) {
+                      return (
+                        <div className="py-16 text-center text-stone-400 text-xs">
+                          Belum ada catatan transaksi yang cocok untuk filter ini.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                            <th className="py-2.5 px-3">ID & Shift</th>
+                            <th className="py-2.5 px-3">Tanggal & Waktu</th>
+                            <th className="py-2.5 px-3">Meja</th>
+                            <th className="py-2.5 px-3">Pembeli</th>
+                            <th className="py-2.5 px-3">Menu</th>
+                            <th className="py-2.5 px-3">Pembayaran & Harga</th>
+                            <th className="py-2.5 px-3">Status</th>
+                            <th className="py-2.5 px-3 text-right">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {logOrders.map((o) => {
+                            const dt = new Date(o.created_at);
+                            const dateStr = dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                            const timeStr = dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                            const orderShift = o.shift || (dt.getHours() >= 8 && dt.getHours() < 17 ? 'Shift Pagi' : 'Shift Malam');
+                            return (
+                              <tr key={o.id} className="hover:bg-stone-50/80 transition-colors">
+                                <td className="py-3 px-3 align-top">
+                                  <span className="font-mono font-bold text-stone-900 block">#{o.order_number}</span>
+                                  <span className="text-[10px] text-stone-500">
+                                    {o.order_type === 'reservation' ? 'Reservasi' : 'Dine In'} · {orderShift}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 align-top whitespace-nowrap">
+                                  <span className="font-bold text-stone-800 block">{dateStr}</span>
+                                  <span className="text-[11px] font-mono text-stone-500">{timeStr} WIB</span>
+                                </td>
+                                <td className="py-3 px-3 align-top whitespace-nowrap">
+                                  <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 font-bold text-[11px]">
+                                    {o.table_number}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 align-top">
+                                  <span className="font-bold text-stone-900 block">{o.customer_name}</span>
+                                  <span className="text-[10px] font-mono text-stone-500">{o.customer_phone || '-'}</span>
+                                </td>
+                                <td className="py-3 px-3 align-top max-w-[200px]">
+                                  <div className="text-[11px] text-stone-700 line-clamp-2">
+                                    {(o.items || []).map(i => `${i.quantity}x ${i.item_name}`).join(', ') || '-'}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 align-top whitespace-nowrap">
+                                  <span className="font-mono font-black text-stone-900 block">
+                                    Rp {o.total_amount.toLocaleString('id-ID')}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-stone-500">
+                                    {o.payment_method === 'qris' ? 'QRIS' : 'Tunai / Kasir'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 align-top whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    o.status === 'completed'
+                                      ? 'bg-emerald-50 text-emerald-700'
+                                      : o.status === 'confirmed' || o.status === 'processing'
+                                      ? 'bg-sky-50 text-sky-700'
+                                      : o.status === 'cancelled'
+                                      ? 'bg-rose-50 text-rose-700'
+                                      : 'bg-amber-50 text-amber-700'
+                                  }`}>
+                                    {o.status === 'completed' ? 'Selesai' : o.status === 'processing' ? 'Diproses' : o.status === 'confirmed' ? 'Terkonfirmasi' : o.status === 'cancelled' ? 'Dibatalkan' : 'Cek QRIS'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 align-top text-right whitespace-nowrap">
+                                  <div className="inline-flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setDetailOrder(o)}
+                                      className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                                      title="Lihat Rincian Struk"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handlePrint(o)}
+                                      className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                                      title="Cetak Struk"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                    {o.payment_proof_url && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedProofUrl(o.payment_proof_url || null)}
+                                        className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-700 transition-colors cursor-pointer"
+                                        title="Lihat Bukti QRIS"
+                                      >
+                                        <CreditCard className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between text-xs shrink-0">
+                  <span className="text-stone-500">
+                    Menampilkan catatan transaksi untuk <strong className="text-stone-800">{activeShiftName}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailLogOpen(false)}
+                    className="px-5 py-2 rounded-xl bg-[#1b3728] hover:bg-[#152c20] text-white font-bold cursor-pointer"
+                  >
+                    Tutup Catatan
                   </button>
                 </div>
               </div>
