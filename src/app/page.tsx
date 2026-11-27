@@ -1441,158 +1441,100 @@ function ArunaPochaStyleContent() {
         /* 3. DINE-IN MENU ORDER VIEW (HANYA MUNCUL DI DINE IN / QR)*/
         /* ======================================================== */
         <main className="flex-1 flex flex-col">
-          {/* Header Bar Khusus Dine-In */}
-          <div className="bg-[#FAF8F5] border-b border-stone-200/80 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
-            <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2.5 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMainTab('home');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-xs font-semibold text-stone-700 border border-stone-200 shadow-2xs transition-all cursor-pointer group"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform text-stone-500" />
-                  <span>Beranda</span>
-                </button>
-                <div className="h-4 w-px bg-stone-300" />
+          {/* FIGMA MENU DINE-IN HEADER & CATEGORY TABS */}
+          <section id="menu" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8 space-y-6 flex-1 w-full">
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setMainTab('home');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 transition-colors cursor-pointer group"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                <span>Kembali</span>
+              </button>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-base sm:text-lg font-bold font-serif text-stone-900 leading-tight">
-                    Menu Dine-In
+                  <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                    Mau pesan apa hari ini?
                   </h1>
-                  <p className="text-[11px] text-stone-500 font-medium">
-                    Pilih menu makanan & minuman langsung untuk {currentTable}
-                    {currentTable ? `Pilih menu makanan & minuman langsung untuk ${currentTable}` : 'Silakan scan QR di meja Anda untuk memesan langsung'}
+                  <p className="text-xs text-stone-500 mt-1">
+                    {currentTable
+                      ? 'Semua diracik segar saat kamu pesan.'
+                      : 'Mode lihat menu · Scan QR Code di meja Anda untuk mulai memesan.'}
                   </p>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <div className="bg-stone-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 select-none">
-                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{currentTable}</span>
-                </div>
                 {currentTable ? (
-                  <div className="bg-stone-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 select-none">
-                    <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{currentTable}</span>
+                  <div className="bg-white border border-stone-200 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 shadow-2xs self-start sm:self-center">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-stone-400">
+                      MEJA
+                    </span>
+                    <span className="text-xl font-serif font-black text-stone-900 leading-none">
+                      {currentTable.replace(/meja\s*/i, '')}
+                    </span>
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setIsScanMejaModalOpen(true)}
-                    className="bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    className="self-start sm:self-center bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-2xs flex items-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
-                    <QrCode className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>Scan Meja</span>
+                    <QrCode className="w-4 h-4 text-emerald-300" />
+                    <span>Scan QR Meja</span>
                   </button>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* BANNER JIKA BELUM SCAN MEJA */}
-          {!currentTable && (
-            <div className="bg-amber-50 border-b border-amber-200/90 px-4 py-2.5">
-              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-                <div className="flex items-center gap-2 text-amber-900">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Anda belum scan meja:</strong> Untuk memesan Dine In, silakan scan kode QR pada meja Anda atau pilih nomor meja Anda.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsScanMejaModalOpen(true)}
-                  className="self-start sm:self-center px-3.5 py-1 rounded-lg bg-[#1b3728] hover:bg-[#142a1f] text-white font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
+              {/* Clean Underline Category Tabs + Search */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-stone-200/90 pt-2">
+                <div
+                  ref={categoryScrollRef}
+                  className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth"
                 >
-                  <QrCode className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Scan QR Meja</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 3. STICKY CATEGORY NAV & INSTANT SEARCH */}
-          <section id="menu" className="py-2.5 bg-white/95 backdrop-blur-md border-b border-stone-200 sticky top-16 z-30 shadow-xs scroll-mt-18">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4">
-
-                {/* Category Buttons */}
-                <div className="flex items-center flex-1 min-w-0">
                   <button
                     type="button"
-                    onClick={() => scrollCategoryBar('left')}
-                    className="flex items-center justify-center w-8 h-8 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 shadow-2xs shrink-0 mr-1.5 transition-all active:scale-95 cursor-pointer"
-                    aria-label="Geser kiri"
+                    onClick={() => setSelectedCategory('cat-all')}
+                    className={`pb-3 text-xs whitespace-nowrap transition-all cursor-pointer border-b-2 ${
+                      selectedCategory === 'cat-all'
+                        ? 'border-[#1b3728] text-stone-900 font-bold'
+                        : 'border-transparent text-stone-400 hover:text-stone-700 font-medium'
+                    }`}
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    Semua menu
                   </button>
 
-                  <div
-                    ref={categoryScrollRef}
-                    className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar flex-1 min-w-0 scroll-smooth"
-                  >
-                    {/* Semua Menu Button */}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory('cat-all')}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shrink-0 whitespace-nowrap transition-all cursor-pointer border ${selectedCategory === 'cat-all'
-                        ? 'bg-[#c87a58] text-white border-[#c87a58] shadow-xs'
-                        : 'bg-white hover:bg-stone-50 text-stone-800 border-stone-200/90 shadow-2xs'
+                  {categories.filter(c => c.id !== 'cat-all').map(cat => {
+                    const isActive = selectedCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`pb-3 text-xs whitespace-nowrap transition-all cursor-pointer border-b-2 ${
+                          isActive
+                            ? 'border-[#1b3728] text-stone-900 font-bold'
+                            : 'border-transparent text-stone-400 hover:text-stone-700 font-medium'
                         }`}
-                    >
-                      <UtensilsCrossed className="w-3.5 h-3.5" />
-                      <span>Semua Menu</span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${selectedCategory === 'cat-all' ? 'bg-black/20 text-white' : 'bg-stone-100 text-stone-500'}`}>
-                        {menuItems.length}
-                      </span>
-                    </button>
-
-                    {/* Kategori Dinamis */}
-                    {categories.filter(c => c.id !== 'cat-all').map(cat => {
-                      const isActive = selectedCategory === cat.id;
-                      const catCount = menuItems.filter(m => m.category_id === cat.id).length;
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => setSelectedCategory(cat.id)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-tight whitespace-nowrap flex items-center gap-2 transition-all cursor-pointer border ${isActive
-                            ? 'bg-[#c87a58] text-white border-[#c87a58] shadow-xs'
-                            : 'bg-white hover:bg-stone-50 text-stone-800 border-stone-200/90 shadow-2xs'
-                            }`}
-                        >
-                          <span>{cat.name}</span>
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? 'bg-black/20 text-white' : 'bg-stone-100 text-stone-500'
-                            }`}>
-                            {catCount}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => scrollCategoryBar('right')}
-                    className="flex items-center justify-center w-8 h-8 rounded-xl bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 shadow-2xs shrink-0 ml-1.5 transition-all active:scale-95 cursor-pointer"
-                    aria-label="Geser kanan"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                      >
+                        {cat.name}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Search Bar */}
-                <div className="relative w-full md:w-64 shrink-0">
-                  <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {/* Search Input */}
+                <div className="relative w-full md:w-56 pb-2 md:pb-2.5 shrink-0">
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari kopi, mie, matcha..."
-                    className="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium bg-stone-100 hover:bg-stone-200/60 focus:bg-white border border-stone-200 focus:border-[#c87a58] focus:outline-none focus:ring-1 focus:ring-[#c87a58] transition-all"
+                    className="w-full pl-8 pr-7 py-1.5 rounded-xl text-xs bg-white border border-stone-200 focus:border-[#1b3728] focus:outline-none transition-colors"
                   />
                   {searchQuery && (
                     <button
@@ -1600,35 +1542,10 @@ function ArunaPochaStyleContent() {
                       onClick={() => setSearchQuery('')}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5 cursor-pointer"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-
-              </div>
-            </div>
-          </section>
-
-          {/* 4. MAIN MENU GRID */}
-          <section id="menu" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 flex-1 w-full">
-            <div className="flex items-center justify-between border-b border-stone-200/90 pb-3 flex-wrap gap-2">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight uppercase">
-                  Menu Pilihan Aruna
-                </h2>
-                <p className="text-xs text-stone-500 font-medium mt-0.5">
-                  Otentik Specialty Coffee & Artisan Kitchen
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {totalMenuPages > 1 && (
-                  <span className="text-[11px] font-bold text-[#c87a58] bg-[#c87a58]/10 px-2.5 py-1 rounded-lg border border-[#c87a58]/20">
-                    Bagian {safeMenuPage} dari {totalMenuPages}
-                  </span>
-                )}
-                <span className="text-xs font-mono font-bold text-stone-600 bg-stone-200/80 px-2.5 py-1 rounded-lg">
-                  {filteredMenuItems.length} Menu
-                </span>
               </div>
             </div>
 
