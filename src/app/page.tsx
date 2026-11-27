@@ -816,32 +816,6 @@ function ArunaPochaStyleContent() {
         </div>
       </header>
 
-      {/* Floating Banner Status Pesanan Aktif untuk Customer */}
-      {activeCustomerOrder && (
-        <div className="bg-[#181513] text-stone-100 px-4 py-2.5 text-xs border-b border-stone-800 flex items-center justify-between shadow-sm animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 max-w-[80%] truncate">
-            <span className="w-2 h-2 rounded-full bg-[#c87a58] shrink-0" />
-            <span className="truncate">
-              Pesanan Anda ({activeCustomerOrder.table_number}):{' '}
-              <strong className="text-amber-400 capitalize">
-                {activeCustomerOrder.status === 'processing'
-                  ? 'Sedang Dimasak di Dapur'
-                  : activeCustomerOrder.status === 'confirmed'
-                    ? 'Diterima Kasir & Siap Dimasak'
-                    : 'Menunggu Verifikasi Kasir'}
-              </strong>
-            </span>
-          </div>
-          <Link
-            href={`/order/status/${activeCustomerOrder.id}`}
-            className="text-xs font-bold text-amber-400 hover:text-amber-300 underline flex items-center gap-1 shrink-0 ml-2"
-          >
-            <span>Live Status</span>
-            <span>→</span>
-          </Link>
-        </div>
-      )}
-
       {/* ======================================================== */}
       {/* CONDITIONAL CONTENT: ORDER MODE VS RESERVATION MODE      */}
       {/* ======================================================== */}
@@ -2723,41 +2697,71 @@ function ArunaPochaStyleContent() {
       </footer>
 
       {/* ======================================================== */}
-      {/* 9. FLOATING BOTTOM CART BAR (PILL ACTION BAR)            */}
+      {/* 9. FLOATING BOTTOM PILL ACTION BAR (EXACT FIGMA DESIGN)   */}
       {/* ======================================================== */}
-      {totalCartCount > 0 && !isCartDrawerOpen && (
-        <div className="fixed z-40 bottom-18 md:bottom-6 left-0 right-0 px-3 sm:px-4 pointer-events-none transition-all duration-300">
+      {(totalCartCount > 0 || (activeCustomerOrder && !isCartDrawerOpen)) && (
+        <div className="fixed z-40 bottom-18 md:bottom-6 left-0 right-0 px-4 pointer-events-none transition-all duration-300">
           <div className="max-w-md mx-auto pointer-events-auto">
-            <div
-              onClick={() => setIsCartDrawerOpen(true)}
-              className="bg-[#1f1b18] text-white px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl sm:rounded-3xl shadow-[0_12px_32px_rgba(0,0,0,0.35)] border border-stone-800 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-300 hover:scale-[1.01] transition-transform cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-stone-800/90 text-stone-200 flex items-center justify-center shrink-0 border border-stone-700/60 shadow-inner">
-                  <ShoppingBag className="w-5 h-5 text-stone-200" />
-                </div>
-                <div className="min-w-0 text-left">
-                  <span className="text-[11px] sm:text-xs font-medium text-stone-300 block leading-tight">
-                    {totalCartCount} Menu
-                  </span>
-                  <span className="text-sm sm:text-base font-black font-mono text-white block leading-tight mt-0.5 tracking-tight">
-                    Rp {totalCartPrice.toLocaleString('id-ID')}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsCartDrawerOpen(true);
-                }}
-                className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#c87a58] hover:bg-[#b86948] active:scale-95 text-white font-bold text-xs sm:text-sm tracking-wide flex items-center gap-1.5 shadow-md transition-all cursor-pointer shrink-0"
+            {totalCartCount > 0 ? (
+              <div
+                onClick={() => setIsCartDrawerOpen(true)}
+                className="bg-[#16271e] text-white px-4 py-3 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.4)] border border-white/10 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5 duration-300 hover:scale-[1.01] transition-transform cursor-pointer"
               >
-                <span>Checkout</span>
-                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center text-white shrink-0 bg-white/5">
+                    <ShoppingBag className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 text-left leading-tight">
+                    <span className="text-xs font-bold text-white block">
+                      {totalCartCount} item
+                    </span>
+                    <span className="text-[11px] font-mono text-stone-300 block mt-0.5">
+                      Rp {totalCartPrice.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCartDrawerOpen(true);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-[#d28a5c] hover:bg-[#c47c4e] active:scale-95 text-stone-900 font-bold text-xs tracking-tight flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
+                >
+                  <span>Lihat pesanan</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                </button>
+              </div>
+            ) : activeCustomerOrder ? (
+              <Link
+                href={`/order/status/${activeCustomerOrder.id}`}
+                className="bg-[#16271e] text-white px-4 py-3 rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.4)] border border-white/10 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-5 duration-300 hover:scale-[1.01] transition-transform cursor-pointer block"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
+                    <Clock className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 text-left leading-tight">
+                    <span className="text-xs font-bold text-white block">
+                      Pesanan {activeCustomerOrder.table_number}
+                    </span>
+                    <span className="text-[11px] text-amber-300/90 block mt-0.5 font-medium truncate">
+                      {activeCustomerOrder.status === 'processing'
+                        ? 'Sedang Dimasak di Dapur'
+                        : activeCustomerOrder.status === 'confirmed'
+                        ? 'Diterima Kasir & Siap Dimasak'
+                        : 'Menunggu Verifikasi Kasir'} · Rp {activeCustomerOrder.total_amount.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="px-5 py-2.5 rounded-xl bg-[#d28a5c] hover:bg-[#c47c4e] text-stone-900 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-colors">
+                  <span>Lihat pesanan</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                </div>
+              </Link>
+            ) : null}
           </div>
         </div>
       )}
