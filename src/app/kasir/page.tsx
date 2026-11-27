@@ -61,6 +61,10 @@ export default function KasirDashboard() {
   const [notificationBanner, setNotificationBanner] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [session, setSession] = useState<any>(null);
+  const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleteConfirmText, setDeleteConfirmText] = useState<string>('');
+  const [isDeletingOrder, setIsDeletingOrder] = useState<boolean>(false);
 
   useEffect(() => {
     setSession(AdminAuth.getSession());
@@ -185,13 +189,25 @@ export default function KasirDashboard() {
     fetchOrders();
   };
 
-  const handleDeleteOrder = async (order: Order) => {
-    if (!confirm(`Hapus permanen pesanan #${order.order_number} (${order.customer_name})? Data ini juga akan hilang dari layar pelanggan.`)) {
-      return;
+  const handleDeleteOrder = (order: Order) => {
+    setDeletingOrder(order);
+    setDeleteStep(1);
+    setDeleteConfirmText('');
+  };
+
+  const executeDeleteOrder = async () => {
+    if (!deletingOrder) return;
+    setIsDeletingOrder(true);
+    try {
+      await CafeStore.deleteOrder(deletingOrder.id);
+      setOrders(prev => prev.filter(o => o.id !== deletingOrder.id));
+      setDeletingOrder(null);
+      setDeleteStep(1);
+      setDeleteConfirmText('');
+      fetchOrders();
+    } finally {
+      setIsDeletingOrder(false);
     }
-    await CafeStore.deleteOrder(order.id);
-    setOrders(prev => prev.filter(o => o.id !== order.id));
-    fetchOrders();
   };
 
   const handleToggleMajoo = async (orderId: string, currentVal: boolean) => {
@@ -1236,6 +1252,124 @@ export default function KasirDashboard() {
               >
                 Tutup
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL KONFIRMASI HAPUS PESANAN 2 LANGKAH                 */}
+      {/* ======================================================== */}
+      {deletingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-5 bg-rose-700 text-white flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-rose-200 block">
+                  KONFIRMASI LANGKAH {deleteStep} DARI 2
+                </span>
+                <h3 className="font-serif font-bold text-base">
+                  {deleteStep === 1 ? 'Hapus Pesanan Ini?' : 'Konfirmasi Akhir Penghapusan'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeletingOrder(null);
+                  setDeleteStep(1);
+                  setDeleteConfirmText('');
+                }}
+                className="p-1.5 rounded-xl text-rose-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs text-stone-800">
+              {/* Info Pesanan */}
+              <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-stone-900">#{deletingOrder.order_number}</span>
+                  <span className="px-2 py-0.5 rounded-md bg-stone-200 text-stone-800 font-bold text-[10px]">
+                    {deletingOrder.table_number}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-stone-600">
+                  <span>Pelanggan: <strong className="text-stone-900">{deletingOrder.customer_name}</strong></span>
+                  <span className="font-mono font-bold text-stone-900">
+                    Rp {deletingOrder.total_amount.toLocaleString('id-ID')}
+                  </span>
+                </div>
+              </div>
+
+              {deleteStep === 1 ? (
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      Pesanan yang dihapus akan <strong>hilang permanen</strong> dari dashboard kasir, rekap harian, database, serta layar status pelanggan.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeletingOrder(null)}
+                      className="px-4 py-2.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-bold cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteStep(2)}
+                      className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <span>Lanjutkan Hapus</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 space-y-2">
+                    <p className="font-bold">Langkah Terakhir — Tindakan Tidak Dapat Dibatalkan!</p>
+                    <p>
+                      Ketik kata <strong className="font-mono bg-rose-100 px-1.5 py-0.5 rounded">HAPUS</strong> di bawah ini untuk mengonfirmasi penghapusan permanen.
+                    </p>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Ketik HAPUS di sini..."
+                    autoFocus
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-rose-600 bg-white"
+                  />
+
+                  <div className="flex items-center justify-between gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteStep(1);
+                        setDeleteConfirmText('');
+                      }}
+                      className="px-4 py-2.5 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-bold cursor-pointer"
+                    >
+                      Kembali
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deleteConfirmText.trim().toUpperCase() !== 'HAPUS' || isDeletingOrder}
+                      onClick={executeDeleteOrder}
+                      className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>{isDeletingOrder ? 'Menghapus...' : 'Ya, Hapus Permanen'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

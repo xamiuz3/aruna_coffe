@@ -2898,46 +2898,46 @@ function ArunaPochaStyleContent() {
               </button>
             </div>
 
-      {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
-      <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
-        <div className="w-16 h-16 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
-          <QrCode className="w-8 h-8 text-emerald-300" />
-        </div>
-        <h4 className="text-sm font-bold text-stone-900">
-          Wajib Scan QR di Meja Anda
-        </h4>
-        <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
-          Untuk memesan <strong>Dine In</strong>, arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda. Jika belum berada di kafe, Anda dapat melihat menu atau melakukan <strong>Reservasi Ruang</strong>.
-        </p>
-      </div>
-
-      <div className="space-y-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            setIsScanMejaModalOpen(false);
-            setMainTab('reservation');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className="w-full py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-        >
-          <CalendarDays className="w-4 h-4 text-emerald-300" />
-          <span>Reservasi Ruang (Min. 6 Jam Sebelum)</span>
-        </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setIsScanMejaModalOpen(false)}
-                        className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Lihat Menu Saja (Tanpa Order)
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
+            <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
+                <QrCode className="w-8 h-8 text-emerald-300" />
+              </div>
+              <h4 className="text-sm font-bold text-stone-900">
+                Wajib Scan QR di Meja Anda
+              </h4>
+              <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
+                Untuk memesan <strong>Dine In</strong>, arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda. Jika belum berada di kafe, Anda dapat melihat menu atau melakukan <strong>Reservasi Ruang</strong>.
+              </p>
             </div>
-          );
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsScanMejaModalOpen(false);
+                  setMainTab('reservation');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              >
+                <CalendarDays className="w-4 h-4 text-emerald-300" />
+                <span>Reservasi Ruang (Min. 6 Jam Sebelum)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsScanMejaModalOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+              >
+                Lihat Menu Saja (Tanpa Order)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function HomePage() {
