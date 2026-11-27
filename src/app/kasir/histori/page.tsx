@@ -416,9 +416,14 @@ export default function HistoriPembayaranPage() {
           {/* Header (Figma / Canva Screenshot 7) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
             <div>
-              <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
-                {activeShiftName.toUpperCase()} · {shiftHours}
-              </span>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400">
+                  {activeShiftName.toUpperCase()} · {shiftHours}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-[#edf3ee] text-[#1b3728] text-[9px] font-black uppercase tracking-wider">
+                  Hari Ini · {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}
+                </span>
+              </div>
               <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
                 Rekap & Tutup Shift
               </h1>
@@ -675,6 +680,14 @@ export default function HistoriPembayaranPage() {
               <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
                 <div className="p-5 bg-[#162a1f] text-white flex items-center justify-between">
                   <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-black uppercase tracking-wider">
+                        HARI INI
+                      </span>
+                      <span className="text-[11px] text-stone-300 font-medium">
+                        {new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
+                      </span>
+                    </div>
                     <h3 className="font-serif font-bold text-base">Tinjau & Rekap Penutupan Shift</h3>
                     <p className="text-xs text-stone-300">{activeShiftName} • {sessionName}</p>
                   </div>
@@ -689,6 +702,12 @@ export default function HistoriPembayaranPage() {
 
                 <div className="p-6 space-y-4 text-xs text-stone-800">
                   <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-2">
+                    <div className="flex justify-between items-center pb-2 border-b border-stone-200/80">
+                      <span className="text-stone-500">Periode Rekap:</span>
+                      <span className="font-bold text-[#1b3728] bg-[#edf3ee] px-2.5 py-0.5 rounded-full text-[11px]">
+                        Hari Ini · {new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}
+                      </span>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-stone-500">Total Penjualan Tunai:</span>
                       <strong className="font-mono text-stone-900">Rp {displayCash.toLocaleString('id-ID')}</strong>
