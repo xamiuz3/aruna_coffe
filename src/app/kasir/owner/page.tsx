@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { CafeStore } from '@/lib/store';
 import { Order } from '@/lib/types';
 import { AdminAuth } from '@/lib/auth';
+import { RealtimeOrders } from '@/lib/realtime';
 import { AdminSidebar } from '@/components/AdminSidebar';
-import { AdminTopNav } from '@/components/AdminTopNav';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -35,59 +35,132 @@ export default function AdminOwnerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    CafeStore.getOrders().then(setOrders);
-    const handleUpdate = () => CafeStore.getOrders().then(setOrders);
+    const load = () => CafeStore.getOrders(true).then(setOrders);
+    load();
+    const unsubscribeRealtime = RealtimeOrders.subscribe((event) => {
+      if (event.type === 'NEW_ORDER' || event.type === 'UPDATE_ORDER' || event.type === 'DELETE_ORDER') {
+        load();
+      }
+    });
+    const handleUpdate = () => load();
     window.addEventListener('arjuna_store_updated', handleUpdate);
-    return () => window.removeEventListener('arjuna_store_updated', handleUpdate);
+    const poll = setInterval(load, 5000);
+    return () => {
+      clearInterval(poll);
+      unsubscribeRealtime();
+      window.removeEventListener('arjuna_store_updated', handleUpdate);
+    };
   }, []);
 
   const session = typeof window !== 'undefined' ? AdminAuth.getSession() : null;
 
-  // Filter orders based on criteria
-  const filteredOrders = orders.filter(o => {
-    if (filterMethod !== 'all' && o.payment_method !== filterMethod) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const match = o.order_number.toLowerCase().includes(q) ||
-        o.customer_name.toLowerCase().includes(q) ||
-        o.table_number.toLowerCase().includes(q);
-      if (!match) return false;
-    }
+  // Hanya hitung pesanan yang sudah terkonfirmasi / diproses / selesai (sinkron dengan Kasir & Rekap Shift)
+  const validOrders = orders.filter(
+    o => o.status === 'confirmed' || o.status === 'processing' || o.status === 'completed'
+  );
+
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const yesterdayDate = new Date(now);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toDateString();
+
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const prevSevenDaysStart = new Date(sevenDaysAgo);
+  prevSevenDaysStart.setDate(prevSevenDaysStart.getDate() - 7);
+
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const todayOrders = validOrders.filter(o => new Date(o.created_at).toDateString() === todayStr);
+  const yesterdayOrders = validOrders.filter(o => new Date(o.created_at).toDateString() === yesterdayStr);
+  const weekOrders = validOrders.filter(o => new Date(o.created_at) >= sevenDaysAgo);
+  const prevWeekOrders = validOrders.filter(o => {
+    const d = new Date(o.created_at);
+    return d >= prevSevenDaysStart && d < sevenDaysAgo;
+  });
+  const monthOrders = validOrders.filter(o => {
+    const d = new Date(o.created_at);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  const yesterdayRevenue = yesterdayOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  const weekRevenue = weekOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  const prevWeekRevenue = prevWeekOrders.reduce((sum, o) => sum + o.total_amount, 0);
+  const monthRevenue = monthOrders.reduce((sum, o) => sum + o.total_amount, 0);
+
+  const calcGrowthPct = (curr: number, prev: number) => {
+    if (prev === 0) return curr > 0 ? '+100%' : '0%';
+    const diff = ((curr - prev) / prev) * 100;
+    return `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+  };
+  const todayGrowth = calcGrowthPct(todayRevenue, yesterdayRevenue);
+  const weekGrowth = calcGrowthPct(weekRevenue, prevWeekRevenue);
+
+  const totalCash = validOrders.filter(o => o.payment_method === 'cashier').reduce((s, o) => s + o.total_amount, 0);
+  const totalQris = validOrders.filter(o => o.payment_method === 'qris').reduce((s, o) => s + o.total_amount, 0);
+  const totalAllMethods = totalCash + totalQris;
+  const qrisPercentage = totalAllMethods > 0 ? Math.round((totalQris / totalAllMethods) * 100) : 0;
+  const cashPercentage = totalAllMethods > 0 ? 100 - qrisPercentage : 0;
+
+  // Real 7-day trend chart from actual orders
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const rawTrend = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (6 - idx));
+    const dStr = d.toDateString();
+    const amount = validOrders
+      .filter(o => new Date(o.created_at).toDateString() === dStr)
+      .reduce((s, o) => s + o.total_amount, 0);
+    return { day: dayNames[d.getDay()], amount };
+  });
+  const maxTrendAmount = Math.max(...rawTrend.map(t => t.amount), 1);
+  const weeklyTrend = rawTrend.map(t => ({
+    ...t,
+    height: t.amount > 0 ? `${Math.max(12, Math.round((t.amount / maxTrendAmount) * 100))}%` : '4%',
+  }));
+  const avgDailyRevenue = Math.round(weekRevenue / 7);
+
+  // Filter orders for Rincian Transaksi Keseluruhan table based on filterPeriod
+  const periodFilteredOrders = validOrders.filter(o => {
+    const d = new Date(o.created_at);
+    if (filterPeriod === 'today') return d.toDateString() === todayStr;
+    if (filterPeriod === 'week') return d >= sevenDaysAgo;
+    if (filterPeriod === 'month') return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     return true;
   });
 
-  // Calculate stats
-  const totalRevenue = orders.reduce((sum, o) => sum + o.total_amount, 0) || 118420000;
-  const todayRevenue = 4280000;
-  const weekRevenue = 28650000;
-  const monthRevenue = 118420000;
+  // Group real orders by date
+  const groupedByDate = new Map<string, { dateObj: Date; ordersCount: number; cash: number; nonCash: number; total: number }>();
+  periodFilteredOrders.forEach(o => {
+    const d = new Date(o.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const existing = groupedByDate.get(key) || { dateObj: d, ordersCount: 0, cash: 0, nonCash: 0, total: 0 };
+    existing.ordersCount += 1;
+    if (o.payment_method === 'cashier') existing.cash += o.total_amount;
+    else existing.nonCash += o.total_amount;
+    existing.total += o.total_amount;
+    groupedByDate.set(key, existing);
+  });
 
-  const totalCash = orders.filter(o => o.payment_method === 'cashier').reduce((s, o) => s + o.total_amount, 0) || 47368000;
-  const totalQris = orders.filter(o => o.payment_method === 'qris').reduce((s, o) => s + o.total_amount, 0) || 71052000;
-  const qrisPercentage = Math.round((totalQris / (totalCash + totalQris)) * 100) || 60;
-  const cashPercentage = 100 - qrisPercentage;
-
-  // 7-day trend mock data for SVG chart
-  const weeklyTrend = [
-    { day: 'Sen', amount: 3800000, height: '55%' },
-    { day: 'Sel', amount: 4100000, height: '60%' },
-    { day: 'Rab', amount: 3950000, height: '58%' },
-    { day: 'Kam', amount: 4400000, height: '65%' },
-    { day: 'Jum', amount: 5600000, height: '82%' },
-    { day: 'Sab', amount: 6800000, height: '100%' },
-    { day: 'Min', amount: 6200000, height: '90%' },
-  ];
-
-  // Daily records list for owner table
-  const dailyReports = [
-    { date: '26 Nov 2026', ordersCount: 64, cash: 1840000, nonCash: 2440000, tax: 428000, total: 4280000, change: '+14.2%' },
-    { date: '25 Nov 2026', ordersCount: 58, cash: 1650000, nonCash: 2100000, tax: 375000, total: 3750000, change: '+5.8%' },
-    { date: '24 Nov 2026', ordersCount: 52, cash: 1420000, nonCash: 2120000, tax: 354000, total: 3540000, change: '-2.1%' },
-    { date: '23 Nov 2026', ordersCount: 55, cash: 1580000, nonCash: 2040000, tax: 362000, total: 3620000, change: '+8.4%' },
-    { date: '22 Nov 2026', ordersCount: 78, cash: 2650000, nonCash: 3550000, tax: 620000, total: 6200000, change: '+22.5%' },
-    { date: '21 Nov 2026', ordersCount: 82, cash: 2900000, nonCash: 3900000, tax: 680000, total: 6800000, change: '+18.1%' },
-    { date: '20 Nov 2026', ordersCount: 61, cash: 1950000, nonCash: 2650000, tax: 460000, total: 4600000, change: '+3.4%' },
-  ];
+  const sortedDailyEntries = Array.from(groupedByDate.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  const dailyReports = sortedDailyEntries.map(([, val], idx) => {
+    const prevEntry = sortedDailyEntries[idx + 1]?.[1];
+    const change = prevEntry ? calcGrowthPct(val.total, prevEntry.total) : (val.total > 0 ? '+100%' : '0%');
+    return {
+      date: val.dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+      ordersCount: val.ordersCount,
+      cash: val.cash,
+      nonCash: val.nonCash,
+      tax: Math.round(val.total * 0.1),
+      total: val.total,
+      change,
+    };
+  });
 
   const handleExportExcel = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -107,8 +180,6 @@ export default function AdminOwnerDashboard() {
       <AdminSidebar currentPath="/kasir/owner" />
 
       <div className="flex-1 flex flex-col min-w-0 w-full">
-        <AdminTopNav />
-
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
           
           {/* Top Header */}
@@ -146,9 +217,11 @@ export default function AdminOwnerDashboard() {
                 <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
                   Pendapatan Hari Ini
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  todayGrowth.startsWith('-') ? 'text-rose-700 bg-rose-50' : 'text-emerald-700 bg-emerald-50'
+                }`}>
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>+14.2%</span>
+                  <span>{todayGrowth}</span>
                 </span>
               </div>
               <div>
@@ -156,7 +229,7 @@ export default function AdminOwnerDashboard() {
                   Rp {todayRevenue.toLocaleString('id-ID')}
                 </span>
                 <span className="text-[11px] text-stone-400 font-medium block mt-1">
-                  vs kemarin (Rp 3.750.000)
+                  vs kemarin (Rp {yesterdayRevenue.toLocaleString('id-ID')})
                 </span>
               </div>
             </div>
@@ -167,9 +240,11 @@ export default function AdminOwnerDashboard() {
                 <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">
                   Pendapatan Minggu Ini
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  weekGrowth.startsWith('-') ? 'text-rose-700 bg-rose-50' : 'text-emerald-700 bg-emerald-50'
+                }`}>
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>+8.6%</span>
+                  <span>{weekGrowth}</span>
                 </span>
               </div>
               <div>
@@ -177,7 +252,7 @@ export default function AdminOwnerDashboard() {
                   Rp {weekRevenue.toLocaleString('id-ID')}
                 </span>
                 <span className="text-[11px] text-stone-400 font-medium block mt-1">
-                  vs minggu lalu (Rp 26.380.000)
+                  vs minggu lalu (Rp {prevWeekRevenue.toLocaleString('id-ID')})
                 </span>
               </div>
             </div>
@@ -189,8 +264,7 @@ export default function AdminOwnerDashboard() {
                   Pendapatan Bulan Ini
                 </span>
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>+18.4%</span>
+                  <span>{monthOrders.length} transaksi</span>
                 </span>
               </div>
               <div>
@@ -198,7 +272,7 @@ export default function AdminOwnerDashboard() {
                   Rp {monthRevenue.toLocaleString('id-ID')}
                 </span>
                 <span className="text-[11px] text-stone-400 font-medium block mt-1">
-                  vs bulan lalu (+18.4% pertumbuhan omset)
+                  Akumulasi transaksi terbayar bulan ini
                 </span>
               </div>
             </div>
@@ -215,7 +289,7 @@ export default function AdminOwnerDashboard() {
                     Tren Pendapatan Harian (7 Hari Terakhir)
                   </h3>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    Rata-rata omset harian: Rp 4.950.000 / hari
+                    Rata-rata omset harian: Rp {avgDailyRevenue.toLocaleString('id-ID')} / hari
                   </p>
                 </div>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
@@ -329,7 +403,13 @@ export default function AdminOwnerDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 font-medium text-stone-800 text-[11px]">
-                  {dailyReports.map((row, idx) => (
+                  {dailyReports.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-stone-400 text-xs">
+                        Belum ada transaksi terbayar pada periode ini.
+                      </td>
+                    </tr>
+                  ) : dailyReports.map((row, idx) => (
                     <tr key={idx} className="hover:bg-stone-50/60 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-stone-900 whitespace-nowrap">
                         {row.date}
