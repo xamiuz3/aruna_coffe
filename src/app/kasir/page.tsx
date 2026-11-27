@@ -312,16 +312,6 @@ export default function KasirDashboard() {
       {/* MAIN CONTENT AREA                                        */}
       {/* ======================================================== */}
       <div className={`flex-1 flex flex-col min-w-0 w-full ${printingOrder ? 'print:hidden' : ''}`}>
-        {/* Banner Aktivasi Suara Bel (Jika belum pernah diklik di browser) */}
-        {!audioUnlocked && (
-          <div 
-            onClick={handleTestSound}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm select-none"
-          >
-            <Bell className="w-3.5 h-3.5 animate-bounce" />
-            <span>Klik di sini sekali untuk mengaktifkan notifikasi suara bel pesanan otomatis (Browser Audio Permission)</span>
-          </div>
-        )}
 
         {/* Banner Alert Notifikasi Baru */}
         {notificationBanner && (

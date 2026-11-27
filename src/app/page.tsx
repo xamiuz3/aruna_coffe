@@ -2691,8 +2691,8 @@ function ArunaPochaStyleContent() {
                       {activeCustomerOrder.status === 'processing'
                         ? 'Sedang Dimasak di Dapur'
                         : activeCustomerOrder.status === 'confirmed'
-                        ? 'Diterima Kasir & Siap Dimasak'
-                        : 'Menunggu Verifikasi Kasir'} · Rp {activeCustomerOrder.total_amount.toLocaleString('id-ID')}
+                          ? 'Diterima Kasir & Siap Dimasak'
+                          : 'Menunggu Verifikasi Kasir'} · Rp {activeCustomerOrder.total_amount.toLocaleString('id-ID')}
                     </span>
                   </div>
                 </div>
@@ -2707,192 +2707,191 @@ function ArunaPochaStyleContent() {
         </div>
       )}
 
-              {/* ======================================================== */}
-              {/* 10. BOTTOM NAVIGATION BAR UNTUK ANDROID / HP (< md)      */}
-              {/* ======================================================== */}
-              <nav className="block md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-3 py-2">
-                <div className="max-w-md mx-auto grid grid-cols-4 items-center">
+      {/* ======================================================== */}
+      {/* 10. BOTTOM NAVIGATION BAR UNTUK ANDROID / HP (< md)      */}
+      {/* ======================================================== */}
+      <nav className="block md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-3 py-2">
+        <div className="max-w-md mx-auto grid grid-cols-4 items-center">
 
-                  {/* 1. Tab Beranda */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMainTab('home');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'home' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-                      }`}
-                  >
-                    <div className={`p-1 rounded-xl transition-all ${mainTab === 'home' ? 'bg-stone-100 text-stone-900' : ''}`}>
-                      <Home className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] tracking-tight">
-                      Beranda
-                    </span>
-                  </button>
+          {/* 1. Tab Beranda */}
+          <button
+            type="button"
+            onClick={() => {
+              setMainTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'home' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'home' ? 'bg-stone-100 text-stone-900' : ''}`}>
+              <Home className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">
+              Beranda
+            </span>
+          </button>
 
-                  {/* 2. Tab Dine In */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMainTab('order');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'order' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-                      }`}
-                  >
-                    <div className={`p-1 rounded-xl transition-all ${mainTab === 'order' ? 'bg-stone-100 text-stone-900' : ''}`}>
-                      <Utensils className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] tracking-tight">
-                      Dine In
-                    </span>
-                  </button>
+          {/* 2. Tab Dine In */}
+          <button
+            type="button"
+            onClick={() => {
+              setMainTab('order');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'order' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'order' ? 'bg-stone-100 text-stone-900' : ''}`}>
+              <Utensils className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">
+              Dine In
+            </span>
+          </button>
 
-                  {/* 3. Tab Reservasi */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMainTab('reservation');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'reservation' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
-                      }`}
-                  >
-                    <div className={`p-1 rounded-xl transition-all ${mainTab === 'reservation' ? 'bg-stone-100 text-stone-900' : ''}`}>
-                      <CalendarDays className="w-5 h-5" />
-                    </div>
-                    <span className="text-[10px] tracking-tight">
-                      Reservasi
-                    </span>
-                  </button>
+          {/* 3. Tab Reservasi */}
+          <button
+            type="button"
+            onClick={() => {
+              setMainTab('reservation');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${mainTab === 'reservation' ? 'text-stone-900 font-bold' : 'text-stone-400 hover:text-stone-700 font-medium'
+              }`}
+          >
+            <div className={`p-1 rounded-xl transition-all ${mainTab === 'reservation' ? 'bg-stone-100 text-stone-900' : ''}`}>
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">
+              Reservasi
+            </span>
+          </button>
 
-                  {/* 3. Tab Keranjang */}
-                  <button
-                    type="button"
-                    onClick={() => setIsCartDrawerOpen(true)}
-                    className="flex flex-col items-center justify-center gap-1 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer relative"
-                  >
-                    <div className="relative p-1">
-                      <ShoppingBag className="w-5 h-5 text-stone-600" />
-                      {totalCartCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#c87a58] text-white text-[9px] font-black flex items-center justify-center shadow-xs animate-in zoom-in-50">
-                          {totalCartCount}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-medium tracking-tight">
-                      Keranjang
-                    </span>
-                  </button>
-
-                  {/* 4. Tab Status Pesanan */}
-                  {activeCustomerOrder ? (
-                    <Link
-                      href={`/order/status/${activeCustomerOrder.id}`}
-                      className="flex flex-col items-center justify-center gap-1 text-emerald-600 transition-colors"
-                    >
-                      <div className="p-1 rounded-xl bg-emerald-50 relative">
-                        <Clock className="w-5 h-5 text-emerald-600" />
-                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
-                      </div>
-                      <span className="text-[10px] font-black tracking-tight text-emerald-700">
-                        Pesanan
-                      </span>
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/kasir"
-                      className="flex flex-col items-center justify-center gap-1 text-stone-400 hover:text-stone-700 transition-colors"
-                    >
-                      <div className="p-1">
-                        <QrCode className="w-5 h-5 text-stone-600" />
-                      </div>
-                      <span className="text-[10px] font-medium tracking-tight">
-                        Admin
-                      </span>
-                    </Link>
-                  )}
-
-                </div>
-              </nav>
-
-              {/* MODAL ZOOM / PERBESAR QRIS UNTUK CUSTOMER */}
-              {isQrisZoomOpen && (
-                <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-                  <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                      <div className="text-left">
-                        <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
-                          QRIS BRI
-                        </span>
-                        <h3 className="font-black text-sm text-stone-900 uppercase mt-0.5">
-                          {paymentSettings?.qris_merchant_name || 'ARUNA COFFEE & KITCHEN'}
-                        </h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsQrisZoomOpen(false)}
-                        className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 cursor-pointer"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <div className="bg-white p-3.5 rounded-2xl border-2 border-stone-900 shadow-md inline-block">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={qrisDataUrl || paymentSettings?.qris_image_url || '/qris-default.png'}
-                        alt="QRIS Aruna"
-                        className="w-64 h-64 sm:w-72 sm:h-72 object-contain mx-auto"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs text-stone-500 font-medium">Bisa di-scan dengan BCA, BRImo, Livin, GoPay, OVO, ShopeePay atau DANA</p>
-                      {mainTab === 'reservation' ? (
-                        <p className="text-sm font-mono font-black text-[#c87a58]">
-                          Transfer DP / Pre-Order: {paymentSettings?.bank_name} {paymentSettings?.bank_account_number}
-                        </p>
-                      ) : (
-                        <p className="text-sm font-mono font-black text-[#c87a58]">
-                          Total Pembayaran: Rp {totalCartPrice.toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsQrisZoomOpen(false)}
-                      className="w-full py-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition cursor-pointer"
-                    >
-                      Tutup Tampilan QRIS
-                    </button>
-                  </div>
-                </div>
+          {/* 3. Tab Keranjang */}
+          <button
+            type="button"
+            onClick={() => setIsCartDrawerOpen(true)}
+            className="flex flex-col items-center justify-center gap-1 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer relative"
+          >
+            <div className="relative p-1">
+              <ShoppingBag className="w-5 h-5 text-stone-600" />
+              {totalCartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#c87a58] text-white text-[9px] font-black flex items-center justify-center shadow-xs animate-in zoom-in-50">
+                  {totalCartCount}
+                </span>
               )}
+            </div>
+            <span className="text-[10px] font-medium tracking-tight">
+              Keranjang
+            </span>
+          </button>
 
-              {/* MODAL SCAN / PILIH MEJA DINE IN */}
-              {isScanMejaModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-                  <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-                    <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-                      <div className="text-left">
-                        <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
-                          VERIFIKASI MEJA DINE IN
-                        </span>
-                        <h3 className="font-serif font-bold text-lg text-stone-900 tracking-tight">
-                          Pindai QR Code Meja
-                        </h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsScanMejaModalOpen(false)}
-                        className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 cursor-pointer transition-colors"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+          {/* 4. Tab Status Pesanan */}
+          {activeCustomerOrder ? (
+            <Link
+              href={`/order/status/${activeCustomerOrder.id}`}
+              className="flex flex-col items-center justify-center gap-1 text-emerald-600 transition-colors"
+            >
+              <div className="p-1 rounded-xl bg-emerald-50 relative">
+                <Clock className="w-5 h-5 text-emerald-600" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
+              </div>
+              <span className="text-[10px] font-black tracking-tight text-emerald-700">
+                Pesanan
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/kasir"
+              className="flex flex-col items-center justify-center gap-1 text-stone-400 hover:text-stone-700 transition-colors"
+            >
+              <div className="p-1">
+                <QrCode className="w-5 h-5 text-stone-600" />
+              </div>
+              <span className="text-[10px] font-medium tracking-tight">
+                Admin
+              </span>
+            </Link>
+          )}
+
+        </div>
+      </nav>
+
+      {/* MODAL ZOOM / PERBESAR QRIS UNTUK CUSTOMER */}
+      {isQrisZoomOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+              <div className="text-left">
+                <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                  QRIS BRI
+                </span>
+                <h3 className="font-black text-sm text-stone-900 uppercase mt-0.5">
+                  {paymentSettings?.qris_merchant_name || 'ARUNA COFFEE & KITCHEN'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQrisZoomOpen(false)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-stone-900 shadow-md inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrisDataUrl || paymentSettings?.qris_image_url || '/qris-default.png'}
+                alt="QRIS Aruna"
+                className="w-64 h-64 sm:w-72 sm:h-72 object-contain mx-auto"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-stone-500 font-medium">Bisa di-scan dengan BCA, BRImo, Livin, GoPay, OVO, ShopeePay atau DANA</p>
+              {mainTab === 'reservation' ? (
+                <p className="text-sm font-mono font-black text-[#c87a58]">
+                  Transfer DP / Pre-Order: {paymentSettings?.bank_name} {paymentSettings?.bank_account_number}
+                </p>
+              ) : (
+                <p className="text-sm font-mono font-black text-[#c87a58]">
+                  Total Pembayaran: Rp {totalCartPrice.toLocaleString('id-ID')}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsQrisZoomOpen(false)}
+              className="w-full py-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition cursor-pointer"
+            >
+              Tutup Tampilan QRIS
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isScanMejaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl border border-stone-200 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="text-left">
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
+                  VERIFIKASI MEJA DINE IN
+                </span>
+                <h3 className="font-serif font-bold text-lg text-stone-900 tracking-tight">
+                  Pindai QR Code Meja
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsScanMejaModalOpen(false)}
+                className="p-1.5 rounded-xl text-stone-400 hover:text-stone-900 hover:bg-stone-100 cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
                     {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
                     <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
@@ -2936,10 +2935,10 @@ function ArunaPochaStyleContent() {
           );
 }
 
-          export default function HomePage() {
+export default function HomePage() {
   return (
-          <Suspense fallback={<div className="min-h-screen bg-[#f7f5f0] flex items-center justify-center font-bold text-xs text-stone-500">Memuat Aruna Cafe...</div>}>
-            <ArunaPochaStyleContent />
-          </Suspense>
-          );
+    <Suspense fallback={<div className="min-h-screen bg-[#f7f5f0] flex items-center justify-center font-bold text-xs text-stone-500">Memuat Aruna Cafe...</div>}>
+      <ArunaPochaStyleContent />
+    </Suspense>
+  );
 }
