@@ -585,20 +585,17 @@ export default function StokManagementPage() {
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 w-full">
-        {/* TOP NAVBAR (JAM, TANGGAL & PEMBERITAHUAN PESANAN / BAHAN HABIS) */}
-        <AdminTopNav />
-
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
 
-          {/* Header & Aksi Cepat Tambah */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-stone-300">
+          {/* Header & Aksi Cepat Tambah (Figma Style) */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-stone-900 uppercase tracking-tight">
-                Manajemen Menu, Resep (BOM) & Stok Baku
+              <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
+                INVENTORI & RESEP · ARUNA CAFE
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                Stok Dessert & Bahan Baku
               </h1>
-              <p className="text-xs text-stone-500 font-medium">
-                Admin dapat menambah bahan baku, restock, serta mendaftarkan menu baru dengan resep wajib yang otomatis memotong stok saat pesanan selesai.
-              </p>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">

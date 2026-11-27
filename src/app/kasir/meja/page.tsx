@@ -538,50 +538,26 @@ export default function TableQRGeneratorPage() {
               </div>
             </div>
           )}
-          {/* Loading Skeleton */}
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(n => (
-                <div key={n} className="bg-white rounded-2xl p-4 border border-stone-200 animate-pulse h-64" />
-              ))}
-            </div>
-          ) : filteredTables.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
-              <QrCode className="w-12 h-12 text-stone-400 mx-auto mb-3" />
-              <p className="text-sm font-bold text-stone-700">Meja tidak ditemukan</p>
-              <p className="text-xs text-stone-500 mt-1">Coba cari dengan nomor meja lain atau hapus filter pencarian.</p>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="mt-3 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Reset Pencarian
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Grid QR Meja */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 print:grid-cols-2 print:gap-6">
+          {/* PRINT-ONLY QR MEJA GRID (Hidden on screen so Figma Denah stays clean) */}
+          {!loading && filteredTables.length > 0 && (
+            <div className="hidden print:block">
+              <div className="grid grid-cols-2 gap-6">
                 {displayedTables.map(tbl => (
                   <div
                     key={tbl.id}
-                    className="bg-white rounded-2xl border-2 border-stone-900 p-4 text-center shadow-xs flex flex-col items-center justify-between print:border-black print:break-inside-avoid relative group hover:border-[#c87a58] transition-colors"
+                    className="bg-white rounded-2xl border-2 border-black p-4 text-center flex flex-col items-center justify-between break-inside-avoid"
                   >
-                    {/* Card Header */}
-                    <div className="w-full border-b-2 border-dashed border-stone-800 pb-2 mb-2 relative">
-                      <span className="font-black text-[11px] tracking-widest uppercase text-[#c87a58] print:text-black">
+                    <div className="w-full border-b-2 border-dashed border-black pb-2 mb-2">
+                      <span className="font-black text-[11px] tracking-widest uppercase text-black">
                         ARUNA COFFEE & KITCHEN
                       </span>
-                      <h3 className="font-black text-xl text-stone-900 uppercase leading-tight mt-0.5">
+                      <h3 className="font-black text-xl text-black uppercase leading-tight mt-0.5">
                         {tbl.table_number}
                       </h3>
-                      <p className="text-[10px] text-stone-500 font-medium">Scan untuk Pesan Menu Langsung</p>
+                      <p className="text-[10px] text-stone-600 font-medium">Scan untuk Pesan Menu Langsung</p>
                     </div>
 
-                    {/* QR Code Container */}
-                    <div className="p-2.5 bg-white rounded-xl border border-stone-200 my-1 shadow-2xs">
+                    <div className="p-2.5 bg-white rounded-xl border border-stone-300 my-1">
                       {tbl.qrDataUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -596,132 +572,16 @@ export default function TableQRGeneratorPage() {
                       )}
                     </div>
 
-                    {/* Card Info & Meta */}
-                    <div className="w-full pt-2 border-t border-stone-200 mt-2 space-y-2">
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-stone-600">
-                        <Users className="w-3 h-3 text-stone-400" />
+                    <div className="w-full pt-2 border-t border-stone-200 mt-2">
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-stone-700">
+                        <Users className="w-3 h-3 text-stone-500" />
                         <span>Kapasitas: {tbl.capacity} Kursi</span>
-                      </div>
-
-                      {/* Actions (Hidden in Print) */}
-                      <div className="print:hidden space-y-1.5 pt-1">
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handlePrintSingle(tbl)}
-                            className="px-2 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                            title="Cetak stiker hanya untuk meja ini"
-                          >
-                            <Printer className="w-3 h-3 text-stone-600" />
-                            <span>Cetak Stiker</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadQR(tbl)}
-                            className="px-2 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                            title="Download gambar QR Code (PNG)"
-                          >
-                            <Download className="w-3 h-3 text-stone-600" />
-                            <span>Download QR</span>
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1 border-t border-stone-100 text-[10px]">
-                          <a
-                            href={tbl.orderUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[#c87a58] hover:underline inline-flex items-center gap-1 font-bold"
-                          >
-                            <span>Tes Buka Menu</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-
-                          <button
-                            type="button"
-                            onClick={() => setDeletingTable(tbl)}
-                            className="text-stone-400 hover:text-rose-600 font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Hapus Meja"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Hapus</span>
-                          </button>
-                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* PAGINATION: 1, 2, 3... */}
-              {filteredTables.length > 0 && !isPrintingAll && !printingTable && (
-                <div className="print:hidden pt-4 pb-2 border-t border-stone-300 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-xs text-stone-500 font-medium text-center sm:text-left">
-                    Menampilkan <strong className="text-stone-900 font-bold">{startIndex + 1}–{Math.min(startIndex + pageSize, filteredTables.length)}</strong> dari <strong className="text-stone-900 font-bold">{filteredTables.length}</strong> meja
-                    {totalPages > 1 && (
-                      <span className="ml-1 text-[#c87a58] font-bold">· (Halaman {safePage} dari {totalPages})</span>
-                    )}
-                  </div>
-
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                      {/* Tombol Sebelumnya */}
-                      <button
-                        type="button"
-                        disabled={safePage <= 1}
-                        onClick={() => {
-                          setCurrentPage(prev => Math.max(1, prev - 1));
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border transition-all disabled:opacity-35 disabled:cursor-not-allowed bg-white hover:bg-stone-50 text-stone-700 border-stone-200/90 shadow-2xs active:scale-95 cursor-pointer"
-                        aria-label="Halaman sebelumnya"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                        <span className="hidden xs:inline">Sebelumnya</span>
-                      </button>
-
-                      {/* Nomor Halaman: 1, 2, 3... */}
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => {
-                        const isActive = pageNum === safePage;
-                        return (
-                          <button
-                            key={pageNum}
-                            type="button"
-                            onClick={() => {
-                              setCurrentPage(pageNum);
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className={`w-9 h-9 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center justify-center ${
-                              isActive
-                                ? 'bg-[#c87a58] text-white border-[#c87a58] shadow-xs scale-102 ring-2 ring-[#c87a58]/20'
-                                : 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200 shadow-2xs hover:border-stone-300'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-
-                      {/* Tombol Berikutnya */}
-                      <button
-                        type="button"
-                        disabled={safePage >= totalPages}
-                        onClick={() => {
-                          setCurrentPage(prev => Math.min(totalPages, prev + 1));
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border transition-all disabled:opacity-35 disabled:cursor-not-allowed bg-white hover:bg-stone-50 text-stone-700 border-stone-200/90 shadow-2xs active:scale-95 cursor-pointer"
-                        aria-label="Halaman berikutnya"
-                      >
-                        <span className="hidden xs:inline">Berikutnya</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
+            </div>
           )}
         </main>
       </div>
