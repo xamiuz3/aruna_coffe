@@ -331,6 +331,12 @@ function ArunaPochaStyleContent() {
   const handleQuickAdd = (item: MenuItem, isForReservation = false) => {
     if (!item.is_available) return;
 
+    // Wajib scan QR meja untuk order Dine-In (tidak boleh order jika hanya lihat menu)
+    if (!isForReservation && mainTab !== 'reservation' && !currentTable) {
+      setIsScanMejaModalOpen(true);
+      return;
+    }
+
     if (item.variants && item.variants.length > 0) {
       handleOpenCustomize(item);
       return;
@@ -609,6 +615,13 @@ function ArunaPochaStyleContent() {
   };
 
   // Konfirmasi Reservasi Meja dari Tab Reservasi
+  const isTimeSlotValid6Hours = (dateStr: string, slotStartHour: number): boolean => {
+    if (!dateStr) return false;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const slotDt = new Date(y, m - 1, d, slotStartHour, 0, 0);
+    return slotDt.getTime() >= Date.now() + 6 * 60 * 60 * 1000;
+  };
+
   const handleConfirmReservation = async () => {
     setResFormError('');
 
@@ -624,6 +637,18 @@ function ArunaPochaStyleContent() {
 
     if (!resDate) {
       setResFormError('Tanggal reservasi wajib dipilih.');
+      return;
+    }
+
+    const slotStartMap: Record<string, number> = {
+      '12.00 – 15.00': 12,
+      '15.00 – 18.00': 15,
+      '18.00 – 21.00': 18,
+      '21.00 – 00.00': 21,
+    };
+    const startHr = slotStartMap[resTimeSlot] ?? 18;
+    if (!isTimeSlotValid6Hours(resDate, startHr)) {
+      setResFormError('Reservasi wajib dilakukan minimal 6 jam sebelum waktu kedatangan. Silakan pilih rentang waktu atau tanggal lain.');
       return;
     }
 
@@ -859,516 +884,379 @@ function ArunaPochaStyleContent() {
         /* ======================================================== */
         /* RESERVASI MEJA VIEW                                      */
         /* ======================================================== */
-        <main className="max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 space-y-6 flex-1">
-          {/* Back link */}
-          <button
-            type="button"
-            onClick={() => setMainTab('home')}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-xs font-bold text-stone-700 border border-stone-200 shadow-2xs transition-all cursor-pointer group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-[#c87a58]" />
-            <span>Kembali ke Beranda</span>
-          </button>
-
-          {/* Heading */}
-          <div>
-            <span className="text-[11px] font-black uppercase text-[#c87a58] tracking-widest block mb-1">
-              RESERVASI MEJA
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-stone-900 font-serif tracking-tight">
-              Simpan meja terbaikmu.
-            </h1>
-            <p className="text-xs sm:text-sm text-stone-500 font-medium mt-1">
-              Pilih jadwal dan meja untuk momen spesial di Aruna Coffee & Kitchen.
-            </p>
-          </div>
-
-          {resFormError && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center gap-2.5 text-xs font-bold animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-              <span>{resFormError}</span>
-            </div>
-          )}
-
-          {/* CARD 1: TANGGAL, WAKTU, JUMLAH TAMU & KOTAK-KOTAK MEJA */}
-          <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-7 shadow-xs space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Tanggal */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Tanggal Reservasi
-                </label>
-                <input
-                  type="date"
-                  value={resDate}
-                  min={todayStr}
-                  onChange={(e) => {
-                    setResDate(e.target.value);
-                    setSelectedResTable(''); // Reset pilihan meja untuk memicu kalkulasi ulang status
+        <main className="max-w-5xl w-full mx-auto px-4 py-6 sm:py-10 flex-1 flex items-center justify-center">
+          <div className="w-full bg-white rounded-3xl shadow-xl border border-stone-200/80 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+            {/* LEFT PANEL: DARK FOREST GREEN (EXACT FIGMA DESIGN) */}
+            <div className="lg:col-span-5 bg-[#1b3728] text-white p-7 sm:p-9 flex flex-col justify-between relative overflow-hidden">
+              <div className="relative z-10 space-y-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResStep(1);
+                    setMainTab('home');
                   }}
-                  className="w-full px-4 py-3 rounded-2xl border border-stone-300 font-bold text-xs sm:text-sm text-stone-900 bg-stone-50/70 focus:bg-white focus:border-[#c87a58] focus:outline-none focus:ring-1 focus:ring-[#c87a58] transition-all cursor-pointer"
-                />
-              </div>
-
-              {/* Waktu */}
-              <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                  Jam Kedatangan
-                </label>
-                <select
-                  value={resTime}
-                  onChange={(e) => {
-                    setResTime(e.target.value);
-                    setSelectedResTable(''); // Reset pilihan meja
-                  }}
-                  className="w-full px-4 py-3 rounded-2xl border border-stone-300 font-bold text-xs sm:text-sm text-stone-900 bg-stone-50/70 focus:bg-white focus:border-[#c87a58] focus:outline-none focus:ring-1 focus:ring-[#c87a58] transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 text-xs font-bold text-stone-200 hover:text-white transition-colors cursor-pointer group"
                 >
-                  {[
-                    '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-                    '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
-                  ].map(t => (
-                    <option key={t} value={t}>{t} WITA</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Jumlah Tamu */}
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                Jumlah Tamu
-              </label>
-              <div className="flex items-center justify-between p-2 rounded-2xl border border-stone-200 bg-stone-50/80 max-w-xs">
-                <button
-                  type="button"
-                  onClick={() => setResGuestCount(Math.max(1, resGuestCount - 1))}
-                  className="w-9 h-9 rounded-xl bg-white hover:bg-stone-200 text-stone-700 flex items-center justify-center font-bold text-sm shadow-2xs transition active:scale-95 cursor-pointer"
-                  aria-label="Kurangi tamu"
-                >
-                  <Minus className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                  <span>Kembali</span>
                 </button>
-                <span className="font-black text-sm text-stone-900">
-                  {resGuestCount} orang
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setResGuestCount(Math.min(25, resGuestCount + 1))}
-                  className="w-9 h-9 rounded-xl bg-white hover:bg-stone-200 text-stone-700 flex items-center justify-center font-bold text-sm shadow-2xs transition active:scale-95 cursor-pointer"
-                  aria-label="Tambah tamu"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
 
-            {/* Kotak-Kotak Meja Interaktif */}
-            <div className="space-y-3 pt-3 border-t border-stone-100">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <span className="text-xs font-black uppercase text-stone-900 tracking-wider">
-                  Pilih Meja Tersedia
-                </span>
-                <span className="text-[11px] text-stone-500 font-medium">
-                  Jadwal: {resDate} • {resTime} WITA
-                </span>
+                <div className="pt-2 space-y-3">
+                  <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-300/80 block">
+                    RESERVASI RUANG
+                  </span>
+                  <h1 className="text-3xl sm:text-4xl font-serif font-bold text-white leading-[1.12] tracking-tight">
+                    Sisakan tempat untuk cerita yang penting.
+                  </h1>
+                  <p className="text-xs sm:text-sm text-stone-300/85 leading-relaxed font-normal pt-1">
+                    Pilih waktu dan suasana yang sesuai. Kami akan menyiapkan ruang terbaik untukmu.
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                {tables.map(tbl => {
-                  const reservedOrder = getReservationForTable(tbl.table_number);
-                  const isReserved = !!reservedOrder;
-                  const isSelected = selectedResTable === tbl.table_number;
-                  const area = getTableArea(tbl.table_number);
-
-                  if (isReserved) {
-                    return (
-                      <div
-                        key={tbl.id}
-                        className="rounded-2xl border-2 border-stone-200 bg-stone-100/90 p-3.5 text-left opacity-75 cursor-not-allowed select-none relative overflow-hidden flex flex-col justify-between min-h-[115px]"
-                        title={`${tbl.table_number} sudah direservasi pada slot ini`}
-                      >
-                        <div>
-                          <Home className="w-4 h-4 text-stone-400 mb-1" />
-                          <h4 className="font-black text-sm text-stone-500 uppercase leading-tight">
-                            {tbl.table_number}
-                          </h4>
-                          <p className="text-[10px] text-stone-400 mt-0.5">{area}</p>
-                        </div>
-                        <div className="mt-2">
-                          <span className="inline-block px-2 py-0.5 rounded-md text-[9px] font-black bg-rose-100 text-rose-700 border border-rose-200">
-                            Sudah Direservasi
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={tbl.id}
-                      type="button"
-                      onClick={() => setSelectedResTable(tbl.table_number)}
-                      className={`rounded-2xl p-3.5 text-left transition-all cursor-pointer flex flex-col justify-between min-h-[115px] shadow-2xs border-2 ${isSelected
-                        ? 'border-[#c87a58] bg-[#fcf8f5] ring-2 ring-[#c87a58]/30 shadow-xs scale-[1.02]'
-                        : 'border-stone-200 hover:border-stone-300 bg-white hover:bg-stone-50/80'
-                        }`}
-                    >
-                      <div className="flex items-start justify-between w-full">
-                        <div>
-                          <Home className={`w-4 h-4 mb-1 ${isSelected ? 'text-[#c87a58]' : 'text-stone-700'}`} />
-                          <h4 className={`font-black text-sm uppercase leading-tight ${isSelected ? 'text-[#c87a58]' : 'text-stone-900'}`}>
-                            {tbl.table_number}
-                          </h4>
-                          <p className="text-[10px] text-stone-500 mt-0.5">{area}</p>
-                        </div>
-                        {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-[#c87a58] text-white flex items-center justify-center shrink-0">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-2 flex items-center justify-between w-full">
-                        <span className="text-[10px] text-stone-500 font-semibold">
-                          {tbl.capacity} Kursi
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black ${isSelected
-                          ? 'bg-[#c87a58] text-white'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          }`}>
-                          {isSelected ? 'Dipilih' : 'Tersedia'}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* CARD 2: PENGATURAN MENU RESERVASI ("mau menu apa saja") */}
-          <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-7 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100 flex-wrap gap-2">
-              <div>
-                <span className="text-xs font-black uppercase text-stone-900 tracking-wider block">
-                  Pre-Order Menu Makanan & Minuman
-                </span>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Tentukan hidangan yang ingin disiapkan saat Anda tiba (opsional).
-                </p>
-              </div>
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200 shrink-0">
-                {resCart.length} Menu Dipilih
-              </span>
-            </div>
-
-            {resCart.length === 0 ? (
-              <div className="p-6 rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50/70 text-center space-y-2">
-                <Utensils className="w-8 h-8 text-stone-400 mx-auto" />
-                <p className="text-xs font-bold text-stone-700">Belum ada menu yang dipilih untuk reservasi ini</p>
-                <p className="text-[11px] text-stone-500 max-w-sm mx-auto">
-                  Ingin makanan atau kopi sudah siap saat Anda sampai? Klik tombol di bawah untuk memilih menu.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIsResMenuPickerOpen(true)}
-                  className="mt-2 px-4 py-2.5 rounded-xl bg-[#c87a58] hover:bg-[#b86948] text-white font-black text-xs inline-flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Pilih Menu Hidangan</span>
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="divide-y divide-stone-100 border border-stone-200 rounded-2xl overflow-hidden bg-stone-50/40">
-                  {resCart.map(cItem => (
-                    <div key={cItem.cart_id} className="p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-white">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={cItem.menu_item.image_url} alt={cItem.menu_item.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-stone-900 truncate">{cItem.menu_item.name}</h4>
-                          <p className="text-[10px] text-stone-500">
-                            {cItem.selected_variants?.map(v => v.chosen.name).join(', ') || 'Standar'}
-                          </p>
-                          <p className="text-xs font-mono font-bold text-[#c87a58]">
-                            Rp {cItem.subtotal.toLocaleString('id-ID')}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center bg-stone-100 rounded-xl border border-stone-200 p-0.5">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateResCartQty(cItem.cart_id, -1)}
-                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 font-bold text-xs cursor-pointer"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="w-6 text-center text-xs font-mono font-black text-stone-900">
-                            {cItem.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateResCartQty(cItem.cart_id, 1)}
-                            className="w-6 h-6 flex items-center justify-center text-stone-600 hover:text-stone-900 font-bold text-xs cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveResCartItem(cItem.cart_id)}
-                          className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {/* Bottom Info Specs */}
+              <div className="relative z-10 pt-8 mt-8 border-t border-white/15 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-stone-200 shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-stone-300/70 block leading-none">Kapasitas nyaman</span>
+                    <span className="text-xs font-bold text-white block mt-1">2–12 orang</span>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-stone-200 shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-stone-300/70 block leading-none">Batas reservasi</span>
+                    <span className="text-xs font-bold text-white block mt-1">Min. 6 jam sebelumnya</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtle decorative leaf circles bottom right */}
+              <div className="absolute -bottom-16 -right-16 w-56 h-56 rounded-full border border-white/10 pointer-events-none" />
+              <div className="absolute -bottom-8 -right-8 w-36 h-36 rounded-full border border-white/10 pointer-events-none" />
+            </div>
+
+            {/* RIGHT PANEL: FORM RESERVASI (LANGKAH 1 & 2) */}
+            <div className="lg:col-span-7 bg-white p-7 sm:p-9 space-y-5">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
+                  LANGKAH {resStep} DARI 2
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                  {resStep === 1 ? 'Detail reservasi' : 'Konfirmasi & Pembayaran DP'}
+                </h2>
+                <p className="text-xs text-stone-500">
+                  {resStep === 1
+                    ? 'Semua data diperlukan untuk mengonfirmasi reservasi.'
+                    : 'Selesaikan pembayaran DP untuk mengunci jadwal reservasi ruangmu.'}
+                </p>
+              </div>
+
+              {resFormError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center gap-2.5 text-xs font-bold animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{resFormError}</span>
+                </div>
+              )}
+
+              {resStep === 1 ? (
+                <div className="space-y-4 text-xs">
+                  {/* Nama Lengkap & Nomor WhatsApp */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-stone-800 mb-1.5">
+                        Nama lengkap <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Nama kamu"
+                        value={resCustomerName}
+                        onChange={(e) => setResCustomerName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:border-[#1b3728] focus:outline-none bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-stone-800 mb-1.5">
+                        Nomor WhatsApp <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="08xx xxxx xxxx"
+                        value={resCustomerPhone}
+                        onChange={(e) => setResCustomerPhone(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:border-[#1b3728] focus:outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Tanggal Reservasi */}
+                  <div>
+                    <label className="block font-bold text-stone-800 mb-1.5">
+                      Tanggal reservasi <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={resDate}
+                      min={todayStr}
+                      onChange={(e) => setResDate(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-stone-900 font-medium focus:border-[#1b3728] focus:outline-none bg-white cursor-pointer"
+                    />
+                    <span className="text-[10px] text-stone-400 flex items-center gap-1 mt-1.5">
+                      <Clock className="w-3 h-3" />
+                      Reservasi paling lambat 6 jam sebelum kedatangan.
+                    </span>
+                  </div>
+
+                  {/* Pilih Rentang Waktu (Validasi min 6 jam sebelum kedatangan) */}
+                  <div>
+                    <label className="block font-bold text-stone-800 mb-1.5">
+                      Pilih rentang waktu <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { label: '12.00 – 15.00', startHr: 12, val: '12:00' },
+                        { label: '15.00 – 18.00', startHr: 15, val: '15:00' },
+                        { label: '18.00 – 21.00', startHr: 18, val: '18:00' },
+                        { label: '21.00 – 00.00', startHr: 21, val: '21:00' },
+                      ].map((slot) => {
+                        const isValid = isTimeSlotValid6Hours(resDate, slot.startHr);
+                        const isSelected = resTimeSlot === slot.label;
+                        return (
+                          <button
+                            key={slot.label}
+                            type="button"
+                            disabled={!isValid}
+                            onClick={() => {
+                              setResTimeSlot(slot.label);
+                              setResTime(slot.val);
+                            }}
+                            className={`py-2.5 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition-all ${
+                              !isValid
+                                ? 'bg-stone-100 border-stone-200 text-stone-400 opacity-50 cursor-not-allowed'
+                                : isSelected
+                                ? 'bg-[#edf3ee] border-[#1b3728] text-[#1b3728] shadow-2xs cursor-pointer'
+                                : 'bg-white border-stone-200 text-stone-700 hover:border-stone-400 cursor-pointer'
+                            }`}
+                            title={!isValid ? 'Minimal 6 jam sebelum kedatangan' : slot.label}
+                          >
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{slot.label}</span>
+                            </div>
+                            {!isValid && (
+                              <span className="text-[9px] text-rose-500 font-semibold">Min. 6 jam</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pilih Lantai */}
+                  <div>
+                    <label className="block font-bold text-stone-800 mb-1.5">
+                      Pilih lantai <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { id: 'Lantai 1' as const, desc: 'Dekat bar · lively' },
+                        { id: 'Lantai 2' as const, desc: 'Lebih tenang · spacious' },
+                      ].map((fl) => {
+                        const isSelected = resFloor === fl.id;
+                        return (
+                          <button
+                            key={fl.id}
+                            type="button"
+                            onClick={() => setResFloor(fl.id)}
+                            className={`p-3.5 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#edf3ee] border-[#1b3728] shadow-2xs'
+                                : 'bg-white border-stone-200 hover:border-stone-300'
+                            }`}
+                          >
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-[#1b3728] text-white' : 'bg-stone-100 text-stone-600'
+                            }`}>
+                              <Building2 className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <span className="font-bold text-stone-900 block">{fl.id}</span>
+                              <span className="text-[10px] text-stone-500 block">{fl.desc}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Checkbox Lantai Cadangan */}
+                  <label className="flex items-start gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={resAllowBackupFloor}
+                      onChange={(e) => setResAllowBackupFloor(e.target.checked)}
+                      className="mt-0.5 rounded border-stone-300 text-[#1b3728] focus:ring-[#1b3728]"
+                    />
+                    <div>
+                      <span className="font-bold text-stone-800 block">Izinkan opsi lantai cadangan</span>
+                      <span className="text-[10px] text-stone-500 block">Jika lantai pilihan penuh, kami akan menghubungimu.</span>
+                    </div>
+                  </label>
+
+                  {/* Submit Step 1 Button */}
                   <button
                     type="button"
-                    onClick={() => setIsResMenuPickerOpen(true)}
-                    className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                    onClick={handleConfirmReservation}
+                    className={`w-full py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      resCustomerName.trim() && resCustomerPhone.trim()
+                        ? 'bg-[#1b3728] hover:bg-[#142a1f] text-white shadow-md'
+                        : 'bg-stone-200 hover:bg-stone-300 text-stone-700'
+                    }`}
                   >
-                    <Plus className="w-3.5 h-3.5 text-[#c87a58]" />
-                    <span>Tambah Menu Lain</span>
+                    <span>Lengkapi data reservasi</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
-
-                  <div className="text-right">
-                    <span className="text-[10px] text-stone-400 uppercase font-black tracking-wider block">
-                      Total Pre-Order:
-                    </span>
-                    <span className="text-sm sm:text-base font-black font-mono text-stone-900">
-                      Rp {resCartTotal.toLocaleString('id-ID')}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* CARD 3: DP RESERVASI & PEMBAYARAN */}
-          <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-7 shadow-xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-              <div>
-                <span className="text-xs font-black uppercase text-stone-900 tracking-wider block">
-                  DP / Metode Pembayaran
-                </span>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Amankan reservasi dengan DP via QRIS resmi Aruna atau bayar tunai di kasir.
-                </p>
-              </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Opsional
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setResDpMethod('qris')}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${resDpMethod === 'qris'
-                  ? 'border-[#c87a58] bg-[#fcf8f5] ring-2 ring-[#c87a58]/20'
-                  : 'border-stone-200 bg-white hover:bg-stone-50'
-                  }`}
-              >
-                <QrCode className="w-5 h-5 text-[#c87a58] mb-1.5" />
-                <h4 className="text-xs font-black text-stone-900">DP QRIS BRI (Disarankan)</h4>
-                <p className="text-[10px] text-stone-500 mt-0.5">Konfirmasi instan & meja diprioritaskan</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setResDpMethod('cashier')}
-                className={`p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${resDpMethod === 'cashier'
-                  ? 'border-[#c87a58] bg-[#fcf8f5] ring-2 ring-[#c87a58]/20'
-                  : 'border-stone-200 bg-white hover:bg-stone-50'
-                  }`}
-              >
-                <Banknote className="w-5 h-5 text-stone-700 mb-1.5" />
-                <h4 className="text-xs font-black text-stone-900">Bayar Kasir Saat Tiba</h4>
-                <p className="text-[10px] text-stone-500 mt-0.5">Bayar saat check-in di outlet Aruna</p>
-              </button>
-            </div>
-
-            {/* Jika QRIS dipilih */}
-            {resDpMethod === 'qris' && paymentSettings && (
-              <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 space-y-4">
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                  <div className="w-44 h-44 sm:w-48 sm:h-48 bg-white p-2.5 rounded-2xl border-2 border-stone-300 shrink-0 shadow-xs flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrisDataUrl || paymentSettings.qris_image_url || '/qris-default.png'}
-                      alt="QRIS Aruna"
-                      className="w-full h-full object-contain cursor-pointer"
-                      onClick={() => setIsQrisZoomOpen(true)}
-                    />
-                  </div>
-                  <div className="text-xs space-y-1.5 text-center sm:text-left">
-                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">
-                      Transfer DP / Pre-Order:
-                    </span>
-                    <p className="font-black text-stone-900">{paymentSettings.qris_merchant_name}</p>
-                    <p className="font-mono text-stone-600 font-bold">{paymentSettings.bank_name}: {paymentSettings.bank_account_number}</p>
+              ) : (
+                /* STEP 2: KONFIRMASI DP & CATATAN */
+                <div className="space-y-4 text-xs">
+                  <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-stone-900 block">{resCustomerName} · {resCustomerPhone}</span>
+                      <span className="text-[11px] text-stone-500 block">
+                        {resDate} · {resTimeSlot} · {resFloor}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      onClick={handleCopyBank}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-[11px] font-bold transition-colors cursor-pointer"
+                      onClick={() => setResStep(1)}
+                      className="text-[11px] font-bold text-[#1b3728] hover:underline cursor-pointer"
                     >
-                      <Copy className="w-3 h-3" />
-                      <span>{copiedAccount ? 'Tersalin!' : 'Salin Rekening'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsQrisZoomOpen(true)}
-                      className="block text-[11px] font-bold text-[#c87a58] hover:underline mt-1 cursor-pointer"
-                    >
-                      Perbesar QR Code
+                      Ubah Data
                     </button>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-stone-800 mb-1">
-                    Upload Bukti Transfer DP (Foto / PDF / Resi Bank) <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="border-2 border-dashed border-stone-300 rounded-2xl p-4 text-center bg-white hover:bg-stone-50/50 transition-colors">
-                    {resPaymentProofUrl ? (
-                      <div className="space-y-2">
-                        {isPdfUrl(resPaymentProofUrl, resPaymentProofName) ? (
-                          <div className="flex items-center justify-center gap-3 p-3 bg-stone-50 rounded-xl border border-stone-200 max-w-sm mx-auto">
-                            <div className="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0">
-                              <FileText className="w-6 h-6" />
-                            </div>
-                            <div className="text-left min-w-0 flex-1">
-                              <p className="text-xs font-bold text-stone-900 truncate">
-                                {resPaymentProofName || 'Dokumen_Transfer_DP.pdf'}
-                              </p>
-                              <span className="text-[10px] text-emerald-600 font-semibold block">
-                                ✓ File Dokumen PDF Siap
-                              </span>
-                            </div>
-                            <a
-                              href={resPaymentProofUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-[10px] font-bold"
-                            >
-                              Lihat
-                            </a>
-                          </div>
-                        ) : (
-                          <div className="w-28 h-28 mx-auto rounded-xl overflow-hidden border border-stone-200 shadow-2xs">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={resPaymentProofUrl} alt="Bukti Transfer" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        <div>
+                  {/* Jumlah Tamu */}
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-stone-200">
+                    <span className="font-bold text-stone-800">Jumlah Tamu</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setResGuestCount(Math.max(2, resGuestCount - 1))}
+                        className="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-bold cursor-pointer"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="font-bold text-stone-900">{resGuestCount} orang</span>
+                      <button
+                        type="button"
+                        onClick={() => setResGuestCount(Math.min(12, resGuestCount + 1))}
+                        className="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 flex items-center justify-center font-bold cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Metode Pembayaran DP */}
+                  <div className="space-y-2">
+                    <label className="block font-bold text-stone-800">Metode Konfirmasi Reservasi</label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setResDpMethod('qris')}
+                        className={`p-3 rounded-xl border text-left cursor-pointer ${
+                          resDpMethod === 'qris' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
+                        }`}
+                      >
+                        <span className="font-bold text-stone-900 block">DP QRIS / Transfer</span>
+                        <span className="text-[10px] text-stone-500 block">Upload bukti bayar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setResDpMethod('cashier')}
+                        className={`p-3 rounded-xl border text-left cursor-pointer ${
+                          resDpMethod === 'cashier' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
+                        }`}
+                      >
+                        <span className="font-bold text-stone-900 block">Bayar di Kasir</span>
+                        <span className="text-[10px] text-stone-500 block">Konfirmasi via WA</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {resDpMethod === 'qris' && (
+                    <div className="p-3.5 rounded-xl bg-stone-50 border border-stone-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-stone-800">Upload Bukti Transfer DP *</span>
+                        <span className="font-mono font-bold text-[#1b3728]">Rp 100.000</span>
+                      </div>
+                      {resPaymentProofUrl ? (
+                        <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-stone-200">
+                          <span className="text-emerald-700 font-bold truncate">✓ {resPaymentProofName || 'Bukti terunggah'}</span>
                           <button
                             type="button"
-                            onClick={() => {
-                              setResPaymentProofUrl('');
-                              setResPaymentProofName('');
-                            }}
-                            className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
+                            onClick={() => { setResPaymentProofUrl(''); setResPaymentProofName(''); }}
+                            className="text-rose-600 font-bold cursor-pointer"
                           >
-                            Ganti File Bukti
+                            Hapus
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <label className="cursor-pointer block space-y-1">
-                        <Upload className="w-6 h-6 text-[#c87a58] mx-auto" />
-                        <span className="text-xs font-bold text-stone-800 block">
-                          {isUploadingResProof ? 'Mengunggah File...' : 'Pilih Bukti Transfer (Foto / PDF / File)'}
-                        </span>
-                        <span className="text-[10px] text-stone-400 block">Mendukung Foto JPG/PNG atau Dokumen PDF dari m-Banking</span>
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf,.pdf"
-                          onChange={handleResProofUpload}
-                          className="hidden"
-                          disabled={isUploadingResProof}
-                        />
-                      </label>
-                    )}
+                      ) : (
+                        <label className="block border border-dashed border-stone-300 rounded-xl p-3 text-center bg-white hover:bg-stone-50 cursor-pointer">
+                          <span className="font-bold text-stone-700 block">
+                            {isUploadingResProof ? 'Mengunggah...' : 'Pilih Foto / PDF Bukti DP'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf,.pdf"
+                            onChange={handleResProofUpload}
+                            className="hidden"
+                            disabled={isUploadingResProof}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-bold text-stone-800 mb-1">Catatan Khusus (Opsional)</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Contoh: Dekat colokan listrik, acara ulang tahun, dll."
+                      value={resNotes}
+                      onChange={(e) => setResNotes(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-stone-900 focus:border-[#1b3728] focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setResStep(1)}
+                      className="px-4 py-3 rounded-xl border border-stone-200 hover:bg-stone-50 text-stone-700 font-bold cursor-pointer"
+                    >
+                      Kembali
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmReservation}
+                      disabled={isSubmittingRes}
+                      className="flex-1 py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                      <CalendarDays className="w-4 h-4" />
+                      <span>{isSubmittingRes ? 'Menyimpan...' : 'Konfirmasi Reservasi Ruang'}</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* CARD 4: DATA PEMESAN & KONFIRMASI */}
-          <div className="bg-white rounded-3xl border border-stone-200 p-5 sm:p-7 shadow-xs space-y-4">
-            <span className="text-xs font-black uppercase text-stone-900 tracking-wider block pb-2 border-b border-stone-100">
-              Informasi Pemesan
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Nama Pemesan <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Dimas Setiawan"
-                  value={resCustomerName}
-                  onChange={(e) => setResCustomerName(e.target.value)}
-                  className="w-full px-3.5 py-3 rounded-2xl border border-stone-300 font-bold text-stone-900 bg-stone-50/60 focus:bg-white focus:border-[#c87a58] focus:outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Nomor WhatsApp <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="Contoh: 081234567890"
-                  value={resCustomerPhone}
-                  onChange={(e) => setResCustomerPhone(e.target.value)}
-                  className="w-full px-3.5 py-3 rounded-2xl border border-stone-300 font-bold text-stone-900 bg-stone-50/60 focus:bg-white focus:border-[#c87a58] focus:outline-none transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-bold text-stone-700 mb-1 text-xs">
-                Catatan Khusus (Opsional)
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Contoh: Meja untuk perayaan ulang tahun, minta tambahan stopkontak, dll."
-                value={resNotes}
-                onChange={(e) => setResNotes(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-stone-300 text-xs text-stone-900 bg-stone-50/60 focus:bg-white focus:border-[#c87a58] focus:outline-none transition-all"
-              />
-            </div>
-
-            <div className="pt-3">
-              <button
-                type="button"
-                onClick={handleConfirmReservation}
-                disabled={isSubmittingRes}
-                className="w-full py-4 rounded-2xl bg-[#c87a58] hover:bg-[#b86948] text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#c87a58]/30 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
-              >
-                <CalendarDays className="w-5 h-5" />
-                <span>
-                  {isSubmittingRes
-                    ? 'Menyimpan Reservasi...'
-                    : `Konfirmasi Reservasi Meja ${selectedResTable ? `(${selectedResTable})` : ''}`
-                  }
-                </span>
-              </button>
+              )}
             </div>
           </div>
         </main>
@@ -1811,7 +1699,7 @@ function ArunaPochaStyleContent() {
                             </span>
                           </div>
 
-                          {item.is_available && (
+                          {item.is_available && currentTable ? (
                             <div className="w-full sm:w-auto">
                               {qtyInCart === 0 ? (
                                 <button
@@ -1844,7 +1732,17 @@ function ArunaPochaStyleContent() {
                                 </div>
                               )}
                             </div>
-                          )}
+                          ) : item.is_available && !currentTable ? (
+                            <button
+                              type="button"
+                              onClick={() => setIsScanMejaModalOpen(true)}
+                              className="w-full sm:w-auto px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                              title="Scan QR Meja untuk memesan"
+                            >
+                              <QrCode className="w-3 h-3" />
+                              <span>Scan Meja</span>
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -2996,66 +2894,41 @@ function ArunaPochaStyleContent() {
                       </button>
                     </div>
 
-                    {/* Ilustrasi & Petunjuk Scan */}
-                    <div className="bg-[#fcf8f5] rounded-2xl p-5 border border-stone-200/80 text-center space-y-2">
-                      <div className="w-14 h-14 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
-                        <QrCode className="w-7 h-7 text-emerald-300" />
+                    {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
+                    <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
+                      <div className="w-16 h-16 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
+                        <QrCode className="w-8 h-8 text-emerald-300" />
                       </div>
                       <h4 className="text-sm font-bold text-stone-900">
-                        Pindai Barcode di Meja Anda
+                        Wajib Scan QR di Meja Anda
                       </h4>
                       <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
-                        Arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda untuk mengaktifkan pemesanan Dine In.
+                        Untuk memesan <strong>Dine In</strong>, arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda. Jika belum berada di kafe, Anda dapat melihat menu atau melakukan <strong>Reservasi Ruang</strong>.
                       </p>
                     </div>
 
-                    {/* Pilihan Cepat 14 Meja Aruna Cafe */}
-                    <div className="space-y-2 text-left">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-stone-700 uppercase tracking-wider">
-                          Atau Pilih Nomor Mejamu:
-                        </span>
-                        <span className="text-[10px] text-stone-400 font-medium">14 Meja Tersedia</span>
-                      </div>
-                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                        {Array.from({ length: 14 }, (_, i) => {
-                          const numStr = String(i + 1).padStart(2, '0');
-                          const tblName = `Meja ${numStr}`;
-                          const isSelected = currentTable === tblName;
-                          return (
-                            <button
-                              key={tblName}
-                              type="button"
-                              onClick={() => {
-                                setCurrentTable(tblName);
-                                setIsScanMejaModalOpen(false);
-                                setFormError('');
-                                try {
-                                  const url = new URL(window.location.href);
-                                  url.searchParams.set('table', tblName);
-                                  window.history.replaceState({}, '', url.toString());
-                                } catch { }
-                              }}
-                              className={`p-2.5 rounded-xl text-center font-bold text-xs transition-all cursor-pointer border ${isSelected
-                                ? 'bg-[#1b3728] text-white border-[#1b3728] shadow-xs scale-105'
-                                : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                                }`}
-                            >
-                              <span className="block text-[9px] text-stone-400 font-normal">Meja</span>
-                              <span className="text-sm font-black">{numStr}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <div className="space-y-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsScanMejaModalOpen(false);
+                          setMainTab('reservation');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="w-full py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <CalendarDays className="w-4 h-4 text-emerald-300" />
+                        <span>Reservasi Ruang (Min. 6 Jam Sebelum)</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsScanMejaModalOpen(false)}
-                      className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      Lihat Menu Dulu
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsScanMejaModalOpen(false)}
+                        className="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Lihat Menu Saja (Tanpa Order)
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
