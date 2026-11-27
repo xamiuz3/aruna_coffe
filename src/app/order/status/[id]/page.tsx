@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { CafeStore } from '@/lib/store';
 import { Order } from '@/lib/types';
+import { RealtimeOrders } from '@/lib/realtime';
 import { 
   CheckCircle2, 
   Clock, 
@@ -37,10 +38,22 @@ function OrderStatusContent() {
 
     async function fetchOrder() {
       const res = await CafeStore.getOrderById(orderId);
+      if (!res) {
+        CafeStore.removeCustomerOrderId(orderId);
+      }
       setOrder(res);
       setLoading(false);
     }
     fetchOrder();
+
+    const unsubscribeRealtime = RealtimeOrders.subscribe((event) => {
+      if (event.type === 'DELETE_ORDER' && event.orderId === orderId) {
+        CafeStore.removeCustomerOrderId(orderId);
+        setOrder(null);
+      } else if (event.type === 'UPDATE_ORDER' && event.order.id === orderId) {
+        setOrder(event.order);
+      }
+    });
 
     // Polling setiap 2 detik & listener update real-time
     const interval = setInterval(fetchOrder, 2000);
@@ -49,6 +62,7 @@ function OrderStatusContent() {
 
     return () => {
       clearInterval(interval);
+      unsubscribeRealtime();
       window.removeEventListener('arjuna_store_updated', handleStoreUpdate);
     };
   }, [orderId]);

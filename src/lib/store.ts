@@ -616,8 +616,27 @@ export const CafeStore = {
   },
 
   async getOrderById(orderId: string): Promise<Order | null> {
-    const orders = await this.getOrders();
+    const orders = await this.getOrders(true);
     return orders.find(o => o.id === orderId || o.order_number === orderId) || null;
+  },
+
+  async deleteOrder(orderId: string): Promise<boolean> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('order_items').delete().eq('order_id', orderId);
+        await supabase.from('orders').delete().eq('id', orderId);
+      } catch (err) {
+        console.warn('Supabase deleteOrder error:', err);
+      }
+    }
+
+    const orders = getStorage<Order[]>(STORAGE_KEY_ORDERS, []);
+    const updated = orders.filter(o => o.id !== orderId);
+    setStorage(STORAGE_KEY_ORDERS, updated);
+    memoryCacheOrders = { data: updated, timestamp: Date.now() };
+    this.removeCustomerOrderId(orderId);
+    RealtimeOrders.broadcastOrderDelete(orderId);
+    return true;
   },
 
   async createOrder(params: {
@@ -923,13 +942,29 @@ export const CafeStore = {
     }
   },
 
+  removeCustomerOrderId(orderId: string): void {
+    if (typeof window === 'undefined' || !orderId) return;
+    try {
+      const list = this.getCustomerOrderIds().filter(id => id !== orderId);
+      localStorage.setItem('aruna_customer_order_ids', JSON.stringify(list));
+      if (localStorage.getItem('aruna_last_order_id') === orderId) {
+        localStorage.removeItem('aruna_last_order_id');
+      }
+      window.dispatchEvent(new Event('arjuna_customer_session_updated'));
+    } catch {}
+  },
+
   async getCustomerActiveOrders(): Promise<Order[]> {
-    const allOrders = await this.getOrders();
+    const allOrders = await this.getOrders(true);
     const myIds = new Set(this.getCustomerOrderIds());
     const sessId = this.getCustomerSessionId();
+    const twelveHoursMs = 12 * 60 * 60 * 1000;
+    const now = Date.now();
 
-    return allOrders.filter(o => 
-      myIds.has(o.id) || (sessId && o.customer_session_id === sessId)
-    );
+    return allOrders.filter(o => {
+      const isMine = myIds.has(o.id) || (sessId && o.customer_session_id === sessId);
+      const isRecent = !isNaN(new Date(o.created_at).getTime()) && (now - new Date(o.created_at).getTime()) < twelveHoursMs;
+      return isMine && isRecent;
+    });
   }
 };

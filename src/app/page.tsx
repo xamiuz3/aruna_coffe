@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
 import { CafeStore } from '@/lib/store';
 import { MenuItem, MenuCategory, TableItem, CartItem, VariantOption, PaymentSettings, Order } from '@/lib/types';
+import { RealtimeOrders } from '@/lib/realtime';
 import {
   Clock,
   MapPin,
@@ -231,9 +232,19 @@ function ArunaPochaStyleContent() {
       loadData();
     };
 
+    const unsubscribeRealtime = RealtimeOrders.subscribe((event) => {
+      if (event.type === 'DELETE_ORDER') {
+        CafeStore.removeCustomerOrderId(event.orderId);
+        loadData();
+      } else if (event.type === 'UPDATE_ORDER') {
+        loadData();
+      }
+    });
+
     window.addEventListener('arjuna_store_updated', handleStoreUpdated);
     window.addEventListener('arjuna_customer_session_updated', handleStoreUpdated);
     return () => {
+      unsubscribeRealtime();
       window.removeEventListener('arjuna_store_updated', handleStoreUpdated);
       window.removeEventListener('arjuna_customer_session_updated', handleStoreUpdated);
     };
@@ -1037,13 +1048,12 @@ function ArunaPochaStyleContent() {
                               setResTimeSlot(slot.label);
                               setResTime(slot.val);
                             }}
-                            className={`py-2.5 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition-all ${
-                              !isValid
-                                ? 'bg-stone-100 border-stone-200 text-stone-400 opacity-50 cursor-not-allowed'
-                                : isSelected
+                            className={`py-2.5 px-2 rounded-xl border text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 transition-all ${!isValid
+                              ? 'bg-stone-100 border-stone-200 text-stone-400 opacity-50 cursor-not-allowed'
+                              : isSelected
                                 ? 'bg-[#edf3ee] border-[#1b3728] text-[#1b3728] shadow-2xs cursor-pointer'
                                 : 'bg-white border-stone-200 text-stone-700 hover:border-stone-400 cursor-pointer'
-                            }`}
+                              }`}
                             title={!isValid ? 'Minimal 6 jam sebelum kedatangan' : slot.label}
                           >
                             <div className="flex items-center gap-1">
@@ -1075,15 +1085,13 @@ function ArunaPochaStyleContent() {
                             key={fl.id}
                             type="button"
                             onClick={() => setResFloor(fl.id)}
-                            className={`p-3.5 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-[#edf3ee] border-[#1b3728] shadow-2xs'
-                                : 'bg-white border-stone-200 hover:border-stone-300'
-                            }`}
+                            className={`p-3.5 rounded-xl border text-left flex items-center gap-3 transition-all cursor-pointer ${isSelected
+                              ? 'bg-[#edf3ee] border-[#1b3728] shadow-2xs'
+                              : 'bg-white border-stone-200 hover:border-stone-300'
+                              }`}
                           >
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                              isSelected ? 'bg-[#1b3728] text-white' : 'bg-stone-100 text-stone-600'
-                            }`}>
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#1b3728] text-white' : 'bg-stone-100 text-stone-600'
+                              }`}>
                               <Building2 className="w-4 h-4" />
                             </div>
                             <div>
@@ -1114,11 +1122,10 @@ function ArunaPochaStyleContent() {
                   <button
                     type="button"
                     onClick={handleConfirmReservation}
-                    className={`w-full py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      resCustomerName.trim() && resCustomerPhone.trim()
-                        ? 'bg-[#1b3728] hover:bg-[#142a1f] text-white shadow-md'
-                        : 'bg-stone-200 hover:bg-stone-300 text-stone-700'
-                    }`}
+                    className={`w-full py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${resCustomerName.trim() && resCustomerPhone.trim()
+                      ? 'bg-[#1b3728] hover:bg-[#142a1f] text-white shadow-md'
+                      : 'bg-stone-200 hover:bg-stone-300 text-stone-700'
+                      }`}
                   >
                     <span>Lengkapi data reservasi</span>
                     <ArrowRight className="w-4 h-4" />
@@ -1172,9 +1179,8 @@ function ArunaPochaStyleContent() {
                       <button
                         type="button"
                         onClick={() => setResDpMethod('qris')}
-                        className={`p-3 rounded-xl border text-left cursor-pointer ${
-                          resDpMethod === 'qris' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
-                        }`}
+                        className={`p-3 rounded-xl border text-left cursor-pointer ${resDpMethod === 'qris' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
+                          }`}
                       >
                         <span className="font-bold text-stone-900 block">DP QRIS / Transfer</span>
                         <span className="text-[10px] text-stone-500 block">Upload bukti bayar</span>
@@ -1182,9 +1188,8 @@ function ArunaPochaStyleContent() {
                       <button
                         type="button"
                         onClick={() => setResDpMethod('cashier')}
-                        className={`p-3 rounded-xl border text-left cursor-pointer ${
-                          resDpMethod === 'cashier' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
-                        }`}
+                        className={`p-3 rounded-xl border text-left cursor-pointer ${resDpMethod === 'cashier' ? 'border-[#1b3728] bg-[#edf3ee]' : 'border-stone-200 bg-white'
+                          }`}
                       >
                         <span className="font-bold text-stone-900 block">Bayar di Kasir</span>
                         <span className="text-[10px] text-stone-500 block">Konfirmasi via WA</span>
@@ -2893,32 +2898,32 @@ function ArunaPochaStyleContent() {
               </button>
             </div>
 
-                    {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
-                    <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
-                      <div className="w-16 h-16 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
-                        <QrCode className="w-8 h-8 text-emerald-300" />
-                      </div>
-                      <h4 className="text-sm font-bold text-stone-900">
-                        Wajib Scan QR di Meja Anda
-                      </h4>
-                      <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
-                        Untuk memesan <strong>Dine In</strong>, arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda. Jika belum berada di kafe, Anda dapat melihat menu atau melakukan <strong>Reservasi Ruang</strong>.
-                      </p>
-                    </div>
+      {/* Ilustrasi & Petunjuk Scan (Wajib Scan QR, tidak bisa pilih manual) */}
+      <div className="bg-[#fcf8f5] rounded-2xl p-6 border border-stone-200/80 text-center space-y-3">
+        <div className="w-16 h-16 rounded-2xl bg-[#1b3728] text-white flex items-center justify-center mx-auto shadow-md">
+          <QrCode className="w-8 h-8 text-emerald-300" />
+        </div>
+        <h4 className="text-sm font-bold text-stone-900">
+          Wajib Scan QR di Meja Anda
+        </h4>
+        <p className="text-xs text-stone-600 leading-relaxed max-w-xs mx-auto">
+          Untuk memesan <strong>Dine In</strong>, arahkan kamera smartphone ke stiker kode QR yang tertempel di meja Anda. Jika belum berada di kafe, Anda dapat melihat menu atau melakukan <strong>Reservasi Ruang</strong>.
+        </p>
+      </div>
 
-                    <div className="space-y-2.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsScanMejaModalOpen(false);
-                          setMainTab('reservation');
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="w-full py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <CalendarDays className="w-4 h-4 text-emerald-300" />
-                        <span>Reservasi Ruang (Min. 6 Jam Sebelum)</span>
-                      </button>
+      <div className="space-y-2.5">
+        <button
+          type="button"
+          onClick={() => {
+            setIsScanMejaModalOpen(false);
+            setMainTab('reservation');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="w-full py-3 rounded-xl bg-[#1b3728] hover:bg-[#142a1f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+        >
+          <CalendarDays className="w-4 h-4 text-emerald-300" />
+          <span>Reservasi Ruang (Min. 6 Jam Sebelum)</span>
+        </button>
 
                       <button
                         type="button"

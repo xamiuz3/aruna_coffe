@@ -42,7 +42,8 @@ import {
   ReceiptText,
   LayoutGrid,
   Table as TableIcon,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 
 export default function KasirDashboard() {
@@ -159,6 +160,8 @@ export default function KasirDashboard() {
         }
       } else if (event.type === 'UPDATE_ORDER') {
         setOrders(prev => prev.map(o => o.id === event.order.id ? event.order : o));
+      } else if (event.type === 'DELETE_ORDER') {
+        setOrders(prev => prev.filter(o => o.id !== event.orderId));
       }
     });
 
@@ -179,6 +182,15 @@ export default function KasirDashboard() {
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     await CafeStore.updateOrderStatus(orderId, newStatus);
+    fetchOrders();
+  };
+
+  const handleDeleteOrder = async (order: Order) => {
+    if (!confirm(`Hapus permanen pesanan #${order.order_number} (${order.customer_name})? Data ini juga akan hilang dari layar pelanggan.`)) {
+      return;
+    }
+    await CafeStore.deleteOrder(order.id);
+    setOrders(prev => prev.filter(o => o.id !== order.id));
     fetchOrders();
   };
 
@@ -953,6 +965,16 @@ export default function KasirDashboard() {
                                   <MessageCircle className="w-3.5 h-3.5" />
                                 </button>
                               )}
+
+                              {/* 4. Hapus Pesanan Permanen */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteOrder(order)}
+                                className="w-8 h-8 rounded-xl border border-stone-200 hover:bg-rose-50 hover:border-rose-200 text-stone-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                                title="Hapus Pesanan Permanen"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>

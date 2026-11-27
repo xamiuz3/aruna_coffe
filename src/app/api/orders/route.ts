@@ -135,3 +135,31 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Gagal memperbarui status di server' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = req.nextUrl.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID pesanan wajib disertakan' }, { status: 400 });
+    }
+
+    const currentOrders = getServerOrders();
+    global.__aruna_server_orders__ = currentOrders.filter(o => o.id !== id);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('order_items').delete().eq('order_id', id);
+        await supabase.from('orders').delete().eq('id', id);
+      } catch (sbErr) {
+        console.warn('Supabase delete order error:', sbErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, deletedId: id }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+    });
+  } catch (err) {
+    console.error('Error deleting order:', err);
+    return NextResponse.json({ success: false, error: 'Gagal menghapus pesanan' }, { status: 500 });
+  }
+}

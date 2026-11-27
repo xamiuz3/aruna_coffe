@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from './supabase/client';
 export type RealtimeOrderEvent = 
   | { type: 'NEW_ORDER'; order: Order }
   | { type: 'UPDATE_ORDER'; order: Order }
+  | { type: 'DELETE_ORDER'; orderId: string }
   | { type: 'SYNC_ORDERS'; orders: Order[] };
 
 type OrderListener = (event: RealtimeOrderEvent) => void;
@@ -81,6 +82,28 @@ class RealtimeOrderManager {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: order.id, status: order.status, majoo_recorded: order.majoo_recorded }),
         }).catch(err => console.warn('Relay patch order error:', err));
+      } catch {}
+    }
+  }
+
+  /**
+   * Broadcast penghapusan pesanan ke seluruh tab & server relay
+   */
+  broadcastOrderDelete(orderId: string): void {
+    const event: RealtimeOrderEvent = { type: 'DELETE_ORDER', orderId };
+    this.notifyListeners(event);
+
+    if (this.broadcastChannel) {
+      try {
+        this.broadcastChannel.postMessage(event);
+      } catch {}
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        fetch(`/api/orders?id=${encodeURIComponent(orderId)}`, {
+          method: 'DELETE',
+        }).catch(err => console.warn('Relay delete order error:', err));
       } catch {}
     }
   }
