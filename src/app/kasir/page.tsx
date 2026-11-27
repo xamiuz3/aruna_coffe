@@ -271,7 +271,40 @@ export default function KasirDashboard() {
   const sessionName = session?.name || 'Aruna S. · Kasir Pagi';
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c1917] flex flex-col lg:flex-row items-start antialiased font-sans">
-      {/* Header Bar (Figma Screenshot 5) */}
+      {/* SIDEBAR ADMIN (BISA DI-MINIMIZE & RESPONSIF HP/TABLET) */}
+      <AdminSidebar
+        currentPath="/kasir"
+        pendingOrdersCount={pendingCount}
+        pendingReservationsCount={orders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+      />
+
+      {/* ======================================================== */}
+      {/* MAIN CONTENT AREA                                        */}
+      {/* ======================================================== */}
+      <div className="flex-1 flex flex-col min-w-0 w-full">
+        {/* Banner Aktivasi Suara Bel (Jika belum pernah diklik di browser) */}
+        {!audioUnlocked && (
+          <div 
+            onClick={handleTestSound}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm select-none"
+          >
+            <Bell className="w-3.5 h-3.5 animate-bounce" />
+            <span>Klik di sini sekali untuk mengaktifkan notifikasi suara bel pesanan otomatis (Browser Audio Permission)</span>
+          </div>
+        )}
+
+        {/* Banner Alert Notifikasi Baru */}
+        {notificationBanner && (
+          <div className="bg-[#c87a58] text-white px-4 py-2.5 font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md animate-in slide-in-from-top duration-200">
+            <Bell className="w-4 h-4 animate-bounce" />
+            <span>{notificationBanner}</span>
+          </div>
+        )}
+
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+          {/* Header Bar (Figma Screenshot 5) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div>
               <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-stone-400 block">
@@ -383,133 +416,6 @@ export default function KasirDashboard() {
                 <MessageSquare className="w-5 h-5 text-[#1b3728]" />
               </div>
             </div>
-          </div>
-          <div className="hidden"></div>
-
-          {/* ======================================================== */}
-      <AdminSidebar
-        currentPath="/kasir"
-        pendingOrdersCount={pendingCount}
-        pendingReservationsCount={orders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length}
-        soundEnabled={soundEnabled}
-        onToggleSound={handleToggleSound}
-      />
-
-      {/* ======================================================== */}
-      {/* 2. MAIN CONTENT AREA                                     */}
-      {/* ======================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
-        
-        {/* TOP NAVBAR (JAM, TANGGAL & PEMBERITAHUAN PESANAN / BAHAN HABIS) */}
-        <AdminTopNav
-          soundEnabled={soundEnabled}
-          onToggleSound={handleToggleSound}
-          onTestSound={handleTestSound}
-        />
-
-        {/* Banner Aktivasi Suara Bel (Jika belum pernah diklik di browser) */}
-        {!audioUnlocked && (
-          <div 
-            onClick={handleTestSound}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm select-none"
-          >
-            <Bell className="w-3.5 h-3.5 animate-bounce" />
-            <span>Klik di sini sekali untuk mengaktifkan notifikasi suara bel pesanan otomatis (Browser Audio Permission)</span>
-          </div>
-        )}
-
-        {/* Banner Alert Notifikasi Baru */}
-        {notificationBanner && (
-          <div className="bg-[#c87a58] text-white px-4 py-2.5 font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md animate-in slide-in-from-top duration-200">
-            <Bell className="w-4 h-4 animate-bounce" />
-            <span>{notificationBanner}</span>
-          </div>
-        )}
-
-        <main className="p-3 sm:p-5 lg:p-6 space-y-4 max-w-[1440px] w-full mx-auto">
-          
-          {/* ======================================================== */}
-          {/* 1. TOP STATS 4 KARTU (PERSIS REFERENSI SCREENSHOT)       */}
-          {/* ======================================================== */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {/* 1. Pesanan Baru */}
-            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                  Pesanan Baru
-                </span>
-                <span className="text-2xl sm:text-3xl font-serif font-black text-stone-900 mt-0.5 block">
-                  {String(newOrdersTodayCount).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                  {todayOrdersCount > 0 ? `${todayOrdersCount} total order hari ini` : 'Belum ada order hari ini'}
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
-                <UtensilsCrossed className="w-5 h-5 text-rose-600" />
-              </div>
-            </div>
-
-            {/* 2. Menunggu Cek QRIS */}
-            <div className={`rounded-2xl p-4 border shadow-2xs flex items-center justify-between transition-colors ${
-              pendingQrisCount > 0 
-                ? 'bg-amber-50/60 border-amber-300' 
-                : 'bg-white border-stone-200/90'
-            }`}>
-              <div>
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">
-                  Menunggu Cek QRIS
-                </span>
-                <span className="text-2xl sm:text-3xl font-serif font-black text-amber-900 mt-0.5 block">
-                  {String(pendingQrisCount).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] text-amber-700 font-bold block mt-0.5">
-                  Perlu diverifikasi
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 shrink-0">
-                <QrCode className="w-5 h-5 text-amber-800" />
-              </div>
-            </div>
-
-            {/* 3. Reservasi Hari Ini */}
-            <div className="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                  Reservasi Hari Ini
-                </span>
-                <span className="text-2xl sm:text-3xl font-serif font-black text-stone-900 mt-0.5 block">
-                  {String(reservationsTodayCount).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                  {totalReservationGuests} total tamu
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
-                <CalendarDays className="w-5 h-5 text-emerald-700" />
-              </div>
-            </div>
-
-            {/* 4. Stok Menipis */}
-            <Link 
-              href="/kasir/stok" 
-              className="bg-white hover:bg-stone-50 transition-colors rounded-2xl p-4 border border-stone-200/90 shadow-2xs flex items-center justify-between group"
-            >
-              <div>
-                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                  Stok Menipis
-                </span>
-                <span className="text-2xl sm:text-3xl font-serif font-black text-stone-900 mt-0.5 block">
-                  04
-                </span>
-                <span className="text-[10px] text-rose-600 font-bold block mt-0.5 group-hover:underline">
-                  Perlu restock
-                </span>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700 shrink-0">
-                <Layers className="w-5 h-5 text-stone-700" />
-              </div>
-            </Link>
           </div>
 
           {/* ======================================================== */}
