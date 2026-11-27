@@ -223,8 +223,8 @@ export const INITIAL_ORDERS: Order[] = [
     total_amount: 75000,
     notes: 'Kopi less ice & less sugar',
     majoo_recorded: false,
-    created_at: '2026-11-26T10:42:00.000Z',
-    updated_at: '2026-11-26T10:42:00.000Z',
+    created_at: '2026-11-27T10:42:00+08:00',
+    updated_at: '2026-11-27T10:42:00+08:00',
     items: [
       {
         id: 'item-1082-1',
@@ -328,8 +328,8 @@ export const INITIAL_ORDERS: Order[] = [
     down_payment: 100000,
     notes: 'Lantai 1 - Rentang 18.00–21.00 (Acara kumpul teman kuliah)',
     majoo_recorded: false,
-    created_at: '2026-11-26T09:15:00.000Z',
-    updated_at: '2026-11-26T09:15:00.000Z',
+    created_at: '2026-11-27T09:15:00+08:00',
+    updated_at: '2026-11-27T09:15:00+08:00',
     items: [
       {
         id: 'item-rsv-1',
@@ -358,8 +358,8 @@ export const INITIAL_ORDERS: Order[] = [
     total_amount: 58000,
     notes: '',
     majoo_recorded: true,
-    created_at: '2026-11-26T08:45:00.000Z',
-    updated_at: '2026-11-26T09:10:00.000Z',
+    created_at: '2026-11-27T08:45:00+08:00',
+    updated_at: '2026-11-27T09:10:00+08:00',
     items: [
       {
         id: 'item-1079-1',
@@ -398,8 +398,8 @@ export const INITIAL_ORDERS: Order[] = [
     total_amount: 98000,
     notes: 'Es teh dipisah gulanya',
     majoo_recorded: true,
-    created_at: '2026-11-26T18:30:00.000Z',
-    updated_at: '2026-11-26T19:00:00.000Z',
+    created_at: '2026-11-27T18:30:00+08:00',
+    updated_at: '2026-11-27T19:00:00+08:00',
     items: [
       {
         id: 'item-1065-1',
@@ -438,8 +438,8 @@ export const INITIAL_ORDERS: Order[] = [
     total_amount: 68000,
     notes: '',
     majoo_recorded: true,
-    created_at: '2026-11-26T19:45:00.000Z',
-    updated_at: '2026-11-26T20:10:00.000Z',
+    created_at: '2026-11-27T19:45:00+08:00',
+    updated_at: '2026-11-27T20:10:00+08:00',
     items: [
       {
         id: 'item-1064-1',

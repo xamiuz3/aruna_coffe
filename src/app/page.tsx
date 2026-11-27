@@ -56,7 +56,7 @@ function ArunaPochaStyleContent() {
 
   const rawTableParam = searchParams.get('table');
   const hasTableParam = !!rawTableParam && rawTableParam.trim() !== '';
-  const tableQuery = hasTableParam
+  const tableQuery = (hasTableParam && rawTableParam)
     ? (rawTableParam.toLowerCase().startsWith('meja') ? rawTableParam : `Meja ${rawTableParam.padStart(2, '0')}`)
     : '';
   const initialTabQuery = searchParams.get('tab');
@@ -249,8 +249,10 @@ function ArunaPochaStyleContent() {
     try {
       const cartKey = currentTable ? `aruna_cart_${currentTable}` : 'aruna_cart_guest';
       if (cart.length > 0) {
+        localStorage.setItem(`aruna_cart_${currentTable}`, JSON.stringify(cart));
         localStorage.setItem(cartKey, JSON.stringify(cart));
       } else {
+        localStorage.removeItem(`aruna_cart_${currentTable}`);
         localStorage.removeItem(cartKey);
       }
     } catch { }
@@ -787,6 +789,14 @@ function ArunaPochaStyleContent() {
                 <span>Akses staf</span>
               </Link>
 
+              {/* Locked Table Pill */}
+              <div
+                className="bg-stone-100 text-stone-700 text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-stone-200 flex items-center gap-1.5 shadow-2xs select-none"
+                title={`Meja Anda terkunci pada ${currentTable} (Sesuai Scan QR)`}
+              >
+                <QrCode className="w-3.5 h-3.5 text-stone-500" />
+                <span>{currentTable}</span>
+              </div>
               {/* Locked Table Pill (Hanya muncul jika sudah scan meja) */}
               {currentTable ? (
                 <div
@@ -1533,12 +1543,17 @@ function ArunaPochaStyleContent() {
                     Menu Dine-In
                   </h1>
                   <p className="text-[11px] text-stone-500 font-medium">
+                    Pilih menu makanan & minuman langsung untuk {currentTable}
                     {currentTable ? `Pilih menu makanan & minuman langsung untuk ${currentTable}` : 'Silakan scan QR di meja Anda untuk memesan langsung'}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
+                <div className="bg-stone-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 select-none">
+                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{currentTable}</span>
+                </div>
                 {currentTable ? (
                   <div className="bg-stone-900 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1.5 select-none">
                     <QrCode className="w-3.5 h-3.5 text-amber-400" />
@@ -1905,6 +1920,7 @@ function ArunaPochaStyleContent() {
                   </div>
                   <div>
                     <h3 className="font-black text-sm uppercase tracking-wide">Keranjang Pesanan</h3>
+                    <p className="text-[11px] text-stone-400">{currentTable} | Dine In</p>
                     <p className="text-[11px] text-stone-400">
                       {currentTable ? `${currentTable} | Dine In` : 'Belum Scan Meja | Dine In'}
                     </p>
@@ -2292,6 +2308,7 @@ function ArunaPochaStyleContent() {
                           disabled={isSubmitting}
                           className="w-full py-3.5 rounded-xl bg-[#c87a58] hover:bg-[#b86948] text-white font-black text-xs uppercase tracking-wider shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
                         >
+                          {isSubmitting ? 'Memproses Pesanan...' : 'Kirim Pesanan Sekarang'}
                           {isSubmitting ? 'Memproses Pesanan...' : (!currentTable ? 'Wajib Scan Meja Terlebih Dahulu' : 'Kirim Pesanan Sekarang')}
                         </button>
                       </div>
@@ -2991,13 +3008,12 @@ function ArunaPochaStyleContent() {
                           const url = new URL(window.location.href);
                           url.searchParams.set('table', tblName);
                           window.history.replaceState({}, '', url.toString());
-                        } catch {}
+                        } catch { }
                       }}
-                      className={`p-2.5 rounded-xl text-center font-bold text-xs transition-all cursor-pointer border ${
-                        isSelected
-                          ? 'bg-[#1b3728] text-white border-[#1b3728] shadow-xs scale-105'
-                          : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
-                      }`}
+                      className={`p-2.5 rounded-xl text-center font-bold text-xs transition-all cursor-pointer border ${isSelected
+                        ? 'bg-[#1b3728] text-white border-[#1b3728] shadow-xs scale-105'
+                        : 'bg-stone-50 hover:bg-stone-100 text-stone-800 border-stone-200'
+                        }`}
                     >
                       <span className="block text-[9px] text-stone-400 font-normal">Meja</span>
                       <span className="text-sm font-black">{numStr}</span>

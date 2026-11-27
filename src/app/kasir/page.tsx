@@ -63,7 +63,10 @@ export default function KasirDashboard() {
 
   useEffect(() => {
     setSession(AdminAuth.getSession());
-    const handleAuthChange = () => setSession(AdminAuth.getSession());
+    const handleAuthChange = () => {
+      setSession(AdminAuth.getSession());
+      setCurrentPage(1);
+    };
     window.addEventListener('aruna_admin_auth_changed', handleAuthChange);
     return () => window.removeEventListener('aruna_admin_auth_changed', handleAuthChange);
   }, []);
@@ -198,22 +201,38 @@ export default function KasirDashboard() {
     return d.toDateString() === new Date().toDateString();
   };
 
-  // Counts for tabs & top stats
-  const allCount = orders.length;
-  const todayOrdersCount = orders.filter(o => isOrderToday(o.created_at)).length;
-  const pendingCount = orders.filter(o => o.status === 'pending_payment').length;
-  const orderCount = orders.filter(o => o.order_type !== 'reservation').length;
-  const reservationCount = orders.filter(o => o.order_type === 'reservation').length;
+  const activeSession = session || (typeof window !== 'undefined' ? AdminAuth.getSession() : null);
+  const activeShiftName = activeSession?.shift || 'Shift Pagi';
+  const shiftHours = activeShiftName === 'Shift Malam' ? '17.00 - Tutup' : activeShiftName === 'Admin Owner' ? 'Akses Laporan Penuh' : '08.00 - 17.00';
+  const sessionName = activeSession?.name || 'Aruna S. · Kasir Pagi';
 
-  const newOrdersTodayCount = orders.filter(o => isOrderToday(o.created_at) && o.order_type !== 'reservation' && o.status !== 'completed').length;
-  const pendingQrisCount = orders.filter(o => o.payment_method === 'qris' && o.status === 'pending_payment').length;
-  const reservationsTodayCount = orders.filter(o => o.order_type === 'reservation' && isOrderToday(o.created_at)).length;
-  const totalReservationGuests = orders
+  const getOrderShift = (order: Order): 'Shift Pagi' | 'Shift Malam' => {
+    if (order.shift) return order.shift;
+    const h = new Date(order.created_at).getHours();
+    return (h >= 8 && h < 17) ? 'Shift Pagi' : 'Shift Malam';
+  };
+
+  // Filter pesanan khusus sesuai shift aktif (kecuali Admin Owner yang melihat semua)
+  const shiftOrders = activeShiftName === 'Admin Owner'
+    ? orders
+    : orders.filter(o => getOrderShift(o) === activeShiftName);
+
+  // Counts for tabs & top stats (khusus shift aktif)
+  const allCount = shiftOrders.length;
+  const todayOrdersCount = shiftOrders.filter(o => isOrderToday(o.created_at)).length;
+  const pendingCount = shiftOrders.filter(o => o.status === 'pending_payment').length;
+  const orderCount = shiftOrders.filter(o => o.order_type !== 'reservation').length;
+  const reservationCount = shiftOrders.filter(o => o.order_type === 'reservation').length;
+
+  const newOrdersTodayCount = shiftOrders.filter(o => isOrderToday(o.created_at) && o.order_type !== 'reservation' && o.status !== 'completed').length;
+  const pendingQrisCount = shiftOrders.filter(o => o.payment_method === 'qris' && o.status === 'pending_payment').length;
+  const reservationsTodayCount = shiftOrders.filter(o => o.order_type === 'reservation' && isOrderToday(o.created_at)).length;
+  const totalReservationGuests = shiftOrders
     .filter(o => o.order_type === 'reservation')
     .reduce((sum, o) => sum + (o.guest_count || 4), 0);
 
-  // Filtered orders
-  const filteredOrders = orders.filter(order => {
+  // Filtered orders (khusus shift aktif)
+  const filteredOrders = shiftOrders.filter(order => {
     if (typeFilter === 'today' && !isOrderToday(order.created_at)) return false;
     if (typeFilter === 'order' && order.order_type === 'reservation') return false;
     if (typeFilter === 'reservation' && order.order_type !== 'reservation') return false;
@@ -273,17 +292,13 @@ export default function KasirDashboard() {
     }
   };
 
-  const activeSession = session || (typeof window !== 'undefined' ? AdminAuth.getSession() : null);
-  const activeShiftName = activeSession?.shift || 'Shift Pagi';
-  const shiftHours = activeShiftName === 'Shift Malam' ? '17.00 - Tutup' : activeShiftName === 'Admin Owner' ? 'Akses Laporan Penuh' : '08.00 - 17.00';
-  const sessionName = activeSession?.name || 'Aruna S. · Kasir Pagi';
   return (
     <div className="min-h-screen bg-[#f4f2ee] text-[#1c1917] flex flex-col lg:flex-row items-start antialiased font-sans">
       {/* SIDEBAR ADMIN (BISA DI-MINIMIZE & RESPONSIF HP/TABLET) */}
       <AdminSidebar
         currentPath="/kasir"
         pendingOrdersCount={pendingCount}
-        pendingReservationsCount={orders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length}
+        pendingReservationsCount={shiftOrders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />
@@ -331,9 +346,11 @@ export default function KasirDashboard() {
                 title="Status Notifikasi Suara"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
-                  {newOrdersTodayCount || 3}
-                </span>
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
               </button>
 
               <div className="flex items-center gap-2.5 pl-2">
@@ -359,10 +376,10 @@ export default function KasirDashboard() {
                   Pesanan baru
                 </span>
                 <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
-                  {newOrdersTodayCount || 12}
+                  {newOrdersTodayCount}
                 </span>
                 <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                  +1 sejak 1 jam lalu
+                  Shift aktif hari ini
                 </span>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#1b3728] flex items-center justify-center shrink-0">
@@ -377,10 +394,10 @@ export default function KasirDashboard() {
                   Reservasi hari ini
                 </span>
                 <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
-                  {reservationsTodayCount || 8}
+                  {reservationsTodayCount}
                 </span>
                 <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
-                  3 menunggu konfirmasi
+                  {shiftOrders.filter(o => o.order_type === 'reservation' && o.status === 'pending_payment').length} menunggu konfirmasi
                 </span>
               </div>
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#b85c38] flex items-center justify-center shrink-0">
@@ -395,7 +412,7 @@ export default function KasirDashboard() {
                   Perlu cek QRIS
                 </span>
                 <span className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1 block">
-                  {pendingQrisCount || 4}
+                  {pendingQrisCount}
                 </span>
                 <span className="text-[10px] text-stone-400 font-medium block mt-0.5">
                   Periksa pembayaran
@@ -487,7 +504,7 @@ export default function KasirDashboard() {
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     typeFilter === 'all' ? 'bg-[#dce7de] text-[#1b3728]' : 'bg-stone-100 text-stone-500'
                   }`}>
-                    {allCount || 16}
+                    {allCount}
                   </span>
                 </button>
 
@@ -507,7 +524,7 @@ export default function KasirDashboard() {
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     typeFilter === 'order' ? 'bg-[#dce7de] text-[#1b3728]' : 'bg-stone-100 text-stone-500'
                   }`}>
-                    {orderCount || 12}
+                    {orderCount}
                   </span>
                 </button>
 
@@ -527,7 +544,7 @@ export default function KasirDashboard() {
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     typeFilter === 'reservation' ? 'bg-[#dce7de] text-[#1b3728]' : 'bg-stone-100 text-stone-500'
                   }`}>
-                    {reservationCount || 4}
+                    {reservationCount}
                   </span>
                 </button>
               </div>
