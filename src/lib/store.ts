@@ -64,6 +64,15 @@ function getStorage<T>(key: string, fallback: T): T {
   }
 }
 
+function setStorageSilent<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error('Storage set silent error:', e);
+  }
+}
+
 function setStorage<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
@@ -91,8 +100,10 @@ export const CafeStore = {
   },
 
   getInitialOrders(): Order[] {
+    const MOCK_IDS = new Set(['ord-101', 'res-201', 'ord-hist-101', 'ord-1082', 'ord-1081', 'rsv-0241', 'ord-1079', 'ord-1065', 'ord-1064', 'res-hist-102']);
     const normalize = (list: Order[]): Order[] => {
-      return list.map(o => {
+      const filtered = isSupabaseConfigured ? list.filter(o => !MOCK_IDS.has(o.id)) : list;
+      return filtered.map(o => {
         if (!o.shift) {
           const h = new Date(o.created_at).getHours();
           const shift: ShiftType = (h >= 8 && h < 17) ? 'Shift Pagi' : 'Shift Malam';
@@ -543,14 +554,24 @@ export const CafeStore = {
           .select('*, items:order_items(*)')
           .order('created_at', { ascending: false });
         if (!error && data) {
-          const list = data as Order[];
+          const list = (data as Order[]).map(o => {
+            if (!o.shift) {
+              const h = new Date(o.created_at).getHours();
+              const shift: ShiftType = (h >= 8 && h < 17) ? 'Shift Pagi' : 'Shift Malam';
+              return { ...o, shift };
+            }
+            return o;
+          });
           memoryCacheOrders = { data: list, timestamp: now };
-          setStorage(STORAGE_KEY_ORDERS, list);
+          setStorageSilent(STORAGE_KEY_ORDERS, list);
           return list;
         }
       } catch (err) {
         console.warn('Supabase getOrders error:', err);
       }
+      // Jika Supabase aktif tetapi gagal sementara, gunakan cache terakhir tanpa inject mock data
+      if (memoryCacheOrders) return memoryCacheOrders.data;
+      return getStorage<Order[]>(STORAGE_KEY_ORDERS, []);
     }
 
     const fallbackOrders = isSupabaseConfigured ? [] : INITIAL_ORDERS;

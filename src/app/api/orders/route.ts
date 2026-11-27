@@ -13,41 +13,32 @@ declare global {
 
 function getServerOrders(): Order[] {
   if (!global.__aruna_server_orders__) {
-    global.__aruna_server_orders__ = [...INITIAL_ORDERS];
+    global.__aruna_server_orders__ = isSupabaseConfigured ? [] : [...INITIAL_ORDERS];
   }
   return global.__aruna_server_orders__;
 }
 
 export async function GET() {
-  const memoryOrders = getServerOrders();
-
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
         .from('orders')
         .select('*, items:order_items(*)')
         .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) {
-        // Merge Supabase with server in-memory orders
-        const idMap = new Map<string, Order>();
-        (data as Order[]).forEach(o => idMap.set(o.id, o));
-        memoryOrders.forEach(o => {
-          if (!idMap.has(o.id)) {
-            idMap.set(o.id, o);
-          }
-        });
-        const merged = Array.from(idMap.values()).sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        return NextResponse.json({ success: true, orders: merged }, {
+      if (!error && data) {
+        return NextResponse.json({ success: true, orders: data }, {
           headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
         });
       }
     } catch (err) {
       console.warn('Supabase get orders server error:', err);
     }
+    return NextResponse.json({ success: true, orders: [] }, {
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
+    });
   }
 
+  const memoryOrders = getServerOrders();
   return NextResponse.json({ success: true, orders: memoryOrders }, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
